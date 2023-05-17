@@ -1,0 +1,386 @@
+﻿@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject CompanyService companyService
+@inject AccountService accountService
+@inject EncryptionService encryptionService
+@inject EmailValidationService emailValidator
+
+<EditForm Model="@Account" OnValidSubmit="() => HandleAccountComplete()">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    @if (Account is not null)
+    {
+        @if (IsEdit && Company is not null)
+        {
+            @if (Company.Disabled_From_Notifications)
+            {
+                <div class="mb-2">
+                    <label for="switch" class="fw-bold">Opt out of Notifications?</label>
+                    <br />
+                    <RadzenSwitch id="switch" class="rz-switch-checked p-2 m-1" Change="() => HandleCompanyDisabled(Company.Disabled_From_Notifications, Company)" />
+                    <p style="color: red;" class="fw-bold">Currently unsubscribed</p>
+                </div>
+            }
+            else
+            {
+                <div class="mb-2">
+                    <label for="switch" class="fw-bold">Opt out of Notifications?</label>
+                    <br />
+                    <RadzenSwitch id="switch" class="p-2" Change="() => HandleCompanyDisabled(Company.Disabled_From_Notifications, Company)" />
+                </div>
+            }
+        }
+
+        @if (!IsEdit)
+        {
+            <label class="fw-bold" for="email">Email (Username)<span style="color: red;">*</span></label>
+            <InputText @bind-Value="Account.Email" class="form-control email mb-2" name="email" id="email" type="text" />
+        }
+
+        @if (IsEdit)
+        {
+            <label class="fw-bold" for="email">Email (Username)<span style="color: red;">*</span></label>
+            <input @bind="accountEmail" class="form-control email mb-2" name="email" id="email" type="text" />
+
+            @if (role == "User")
+            {
+                <label for="old-password">Current Password: </label>
+                <input @bind="oldpassword" class="form-control mb-2" name="password" id="old-password" type="password" />
+
+                <label for="new-password">New Password: </label>
+                <input @bind="newpassword" class="form-control mb-2" name="new-password" id="new-password" type="password" />
+
+                <label for="password2">Confirm New Password: </label>
+                <input @bind="password2" class="form-control mb-2" name="password2" id="password2" type="password" />
+
+            }
+
+            else if (role == "Admin" || role == "SuperUser")
+            {
+                <label for="new-password" class="fw-bold">Change Password</label>
+                <input @bind="newpassword" class="form-control new-password mb-2" name="newpassword" id="new-password" type="password" />
+            }
+        }
+        else
+        {
+            <label for="password" class="fw-bold">Password<span style="color: red;"> *</span></label>
+            <InputText @bind-Value="Account.Password" class="form-control password mb-2" name="password" id="password" type="password" />
+
+            <label class="fw-bold" for="password2">Confirm Password<span style="color: red;"> *</span></label>
+            <input @bind="@password2" class="form-control password2 @(password2 == null ? "" : "modified") @(Account.Password == password2 ? "valid" : "invalid") mb-3" id="password2" name="password2" type="password" />
+
+            @if (Account.Password == password2)
+            {
+                PasswordError = null;
+            }
+
+            @if (PasswordError is not null)
+            {
+                <div class="alert alert-danger">@PasswordError</div>
+            }
+            @if (SaveAccountError is not null)
+            {
+                <div class="alert alert-danger">@SaveAccountError</div>
+            }
+        }
+    }
+
+    @if (IsEdit)
+    {
+        @if (SaveAccountSuccess is not null)
+        {
+            <div class="alert alert-success">@SaveAccountSuccess</div>
+        }
+
+        @if (SaveAccountError is not null)
+        {
+            <div class="alert alert-danger">@SaveAccountError</div>
+        }
+        <button type="button" @onclick="() => HandleAccountSubmitEdit()" class="btn btn-success btn-sm mt-2">Save Account Info</button>
+    }
+    else
+    {
+        <button type="button" @onclick="() => HandlePrevious()" class="btn btn-primary mb-3 mr-2">Previous</button>
+
+        <button type="submit" class="btn btn-primary mb-3">Next</button>
+    }
+
+</EditForm>
+
+@code {
+
+    [Parameter]
+    public List<VendorAccount>? Accounts { get; set; }
+
+    [Parameter]
+    public VendorAccount? Account { get; set; }
+
+    [Parameter]
+    public Company? Company { get; set; }
+
+    [Parameter]
+    public bool IsEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback<int> AccountOnPrevious { get; set; }
+
+    [Parameter]
+    public string? password2 { get; set; }
+
+    [Parameter]
+    public bool PasswordMatch { get; set; }
+
+    [Parameter]
+    public string? SaveAccountSuccess { get; set; }
+
+    [Parameter]
+    public string? SaveAccountError { get; set; }
+
+    [Parameter]
+    public List<Company>? Companies { get; set; }
+
+    private string? PasswordError { get; set; }
+
+    private string? role { get; set; }
+
+    private string? InitialPassword { get; set; }
+
+    private string? oldpassword { get; set; }
+
+    private string? newpassword { get; set; }
+
+    private string? accountEmail { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
+
+        var claims = userAuth.User.Claims.ToList();
+        role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+
+        if (Account is not null)
+        {
+            InitialPassword = Account.Password;
+
+            accountEmail = Account.Email;
+        }
+    }
+
+    public async Task HandleAccountComplete()
+    {
+        if (Account is not null)
+        {
+            if (password2 != Account.Password)
+            {
+                PasswordError = "Passwords must match";
+                return;
+            }
+
+            bool EmailValid = emailValidator.EmailValidate(Account.Email);
+
+            if (!EmailValid) {
+                SaveAccountSuccess = null;
+                SaveAccountError = "Invalid email address. Format: XXXX@example.com";
+                return;
+            }
+
+            List<VendorAccount> matchingAccounts = Accounts.Where(account => account.Email.ToLower() == Account.Email.ToLower()).ToList();
+            var existingUser = false;
+
+            foreach (var account in matchingAccounts)
+            {
+                var company = companyService.GetCompanyById(account.CompanyId);
+                if (company is not null && company.Completed_Registeration)
+                {
+                    existingUser = true;
+
+                    if (existingUser && company.Is_Deleted)
+                    {
+                        SaveAccountSuccess = null;
+                        SaveAccountError = $"An account already exists with this email for the company '{company.Name}'. The account for the company has been deleted, please contact Purchasing at Adelaide Mhlanga at amhlanga@hhcorp.org or 317.221.2038 for more information.";
+                        return;
+                    }
+                    else if (existingUser)
+                    {
+                        SaveAccountSuccess = null;
+                        SaveAccountError = $"An account already exists for this email for the company {company.Name}";
+                        return;
+                    }
+                }
+            }
+
+            if (OnSubmit.HasDelegate)
+            {
+                await OnSubmit.InvokeAsync(true);
+
+                password2 = Account.Password;
+            }
+        }
+    }
+
+    public async Task HandlePrevious()
+    {
+        await AccountOnPrevious.InvokeAsync(2);
+    }
+
+    private void HandleCompanyDisabled(bool Disabled, Company company)
+    {
+        if (Disabled && company is not null)
+        {
+            company.Disabled_From_Notifications = false;
+        }
+        else if (!Disabled && company is not null)
+        {
+            company.Disabled_From_Notifications = true;
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleAccountSubmitEdit()
+    {
+
+        if (Account is not null)
+        {
+            try
+            {
+                bool EmailValid = emailValidator.EmailValidate(accountEmail);
+                var matchingAccounts = Accounts.Where(account => account.Email.ToLower() == accountEmail.ToLower() && account.Email != Account.Email);
+                var existingUser = false;
+
+                foreach (var account in matchingAccounts)
+                {
+                    var company = companyService.GetCompanyById(account.CompanyId);
+                    if (company is not null && company.Completed_Registeration)
+                    {
+                        existingUser = true;
+
+                        if (existingUser && company.Is_Deleted)
+                        {
+                            SaveAccountSuccess = null;
+                            SaveAccountError = $"An account already exists with this email for the company '{company.Name}'. The account for the company has been deleted, please contact Purchasing at Adelaide Mhlanga at amhlanga@hhcorp.org or 317.221.2038 for more information.";
+                            return;
+                        }
+                        else if (existingUser)
+                        {
+                            SaveAccountSuccess = null;
+                            SaveAccountError = $"An account already exists for this email for the company {company.Name}";
+                            return;
+                        }
+                    }
+                }
+
+                if (!EmailValid)
+                {
+                    SaveAccountSuccess = null;
+                    SaveAccountError = "Invalid email address. Format: XXXX@example.com";
+                    return;
+                }
+                else if (accountEmail != Account.Email && EmailValid && !existingUser)
+                {
+                    Account.Email = accountEmail;
+                }
+                else if (accountEmail == Account.Email)
+                {
+                    Account.Email = Account.Email;
+                }
+
+
+                if (role == "Admin" || role == "SuperUser")
+                {
+                    if (newpassword is not null)
+                    {
+                        bool PasswordValid = Regex.IsMatch(newpassword, @"^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[^\w\d\s:])([^\s]){6,1000}$");
+
+                        if (PasswordValid)
+                        {
+                            var salt = BCrypt.Net.BCrypt.GenerateSalt(12);
+                            Account.Password = BCrypt.Net.BCrypt.HashPassword(newpassword, salt);
+                            SaveAccountError = null;
+                        }
+                        else
+                        {
+                            SaveAccountError = "Password doesn't meet security rules. Password must include at least one: Number, Uppercase Letter, Lowercase Letter, and non-alplha-numeric character. Password Length between 6 and 1000 characters (no spaces).";
+                            SaveAccountSuccess = null;
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    if (oldpassword is not null && newpassword is not null && password2 is not null)
+                    {
+                        if (newpassword != password2)
+                        {
+                            SaveAccountSuccess = null;
+                            SaveAccountError = "Passwords do not match";
+                            return;
+                        }
+
+                        bool PasswordValid = Regex.IsMatch(newpassword, @"^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[^\w\d\s:])([^\s]){6,1000}$");
+                        bool PasswordVerified = BCrypt.Net.BCrypt.Verify(oldpassword, Account.Password);
+
+                        if (PasswordValid)
+                        {
+                            if (PasswordVerified)
+                            {
+                                var salt = BCrypt.Net.BCrypt.GenerateSalt(12);
+                                Account.Password = BCrypt.Net.BCrypt.HashPassword(newpassword, salt);
+                                SaveAccountError = null;
+                            }
+                            else
+                            {
+                                SaveAccountError = "Wrong Password. Old password did not match with the saved password.";
+                                SaveAccountSuccess = null;
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            SaveAccountError = "Password doesn't meet security rules. Password must include at least one: Number, Uppercase Letter, Lowercase Letter, and non-alplha-numeric character. Password Length between 6 and 1000 characters (no spaces).";
+                            SaveAccountSuccess = null;
+                            return;
+                        }
+                    }
+                    else if (newpassword is not null && password2 is not null && oldpassword is null)
+                    {
+                        SaveAccountError = "Please enter your old password to validate";
+                        SaveAccountSuccess = null;
+                        return;
+                    }
+                    else if (oldpassword is not null && newpassword is null)
+                    {
+                        SaveAccountError = "Please enter a new password and confirm new password";
+                        SaveAccountSuccess = null;
+                        return;
+                    }
+                    else if (newpassword is not null && password2 is null)
+                    {
+                        SaveAccountError = "Please confirm your new password";
+                        SaveAccountSuccess = null;
+                        return;
+                    }
+                }
+
+                accountService.DbUpdateAccount(Account);
+                Company.EditedSince = DateTime.Now;
+                companyService.DbUpdateCompany(Company);
+                SaveAccountSuccess = "Saved Account changes successfully!";
+              
+                SaveAccountError = null;
+                newpassword = null;
+                oldpassword = null;
+                password2 = null;
+
+                await OnSubmit.InvokeAsync(true);
+            }
+            catch
+            {
+                SaveAccountError = "There was an error while saving Account changes. Please try again.";
+            }
+
+        }
+    }
+}

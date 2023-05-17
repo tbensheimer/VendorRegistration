@@ -1,0 +1,779 @@
+﻿@page "/register"
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject CompanyService companyService
+@inject AccountService accountService
+@inject AddressService addressService
+@inject AuthorizedContactsService contactService
+@inject TypeService typeService
+@inject CategoryService categoryService
+@inject CompanyTypesAndCatsService ctcService
+@inject VendorLinksService vendorLinksService
+@inject EncryptionService encryptionService
+@inject TypeCatCompanyChangesService changeService
+@inject EmailSenderService emailService
+@inject RegisterService registerService
+
+
+<h2 class="title text-center mb-2">Vendor Registration Form</h2>
+
+@if (Company is not null && Account is not null && Address is not null && Authorized_Contact is not null)
+{
+        <div class="form-wrapper">
+            <div class="tab rounded">
+                <button class="@((tab1) ? "active" : "") rounded-left">
+                    <i alt="user icon" class="fa-regular fa-building"></i><br />
+                    <span class="tab-desc d-none d-sm-inline">Company</span>
+                </button>
+
+                <button class="@((tab2) ? "active" : "")">
+                    <i alt="building icon" class="fa-regular fa-user"></i><br />
+                    <span class="tab-desc d-none d-sm-inline">Account</span>
+                </button>
+
+                <button class="@((tab3) ? "active" : "")">
+                    <i alt="address-book icon" class="fa-regular fa-address-book"></i><br />
+                    <span class="tab-desc d-none d-sm-inline">Address</span>
+                </button>
+
+                <button class="@((tab4) ? "active" : "")">
+                    <i alt="address-book icon" class="fa-regular fa-address-book"></i><br />
+                    <span class="tab-desc d-none d-sm-inline">Contacts</span>
+                </button>
+
+                <button class="@((tab5) ? "active" : "")">
+                    <i alt="briefcase-icon" class="fa-solid fa-briefcase"></i><br />
+                    <span class="tab-desc d-none d-sm-inline">Business Types / Categories</span>
+                </button>
+
+                <button class="@((tab6) ? "active" : "") rounded-right">
+                    <i alt="checkmark" class="fa-regular fa-square-check"></i><br />
+                    <span class="tab-desc d-none d-sm-inline">Terms</span>
+                </button>
+            </div>
+
+        @if (tab1)
+        {
+                    <div class="tabcontent">
+                        <div class="create-account-container mb-2 shadow">
+
+                            <h3 class="contacts-title fs-3 fw-bold mb-4">Company Information:</h3>
+                            <CompanyInfoForm CompanyAdded="@CompanyAdded" Companies="@Companies" Accounts="@Accounts" Company="@Company" OnSubmit="@HandleCompanySubmit" />
+
+                    @if (ErrorMessage is not null)
+                    {
+                                    <div class="alert alert-danger">@ErrorMessage</div>
+                    }
+
+                        </div>
+                    </div>
+        }
+        @if (tab2)
+        {
+                    <div class="tabcontent">
+                        <div class="create-account-container shadow">
+
+                            <h3 class="contacts-title fs-3 fw-bold mb-4">Create Account:</h3>
+                            <AccountForm Account="@Account" Accounts="@Accounts" password2="@password2" PasswordMatch="@PasswordMatch" AccountOnPrevious="@HandlePreviousView" OnSubmit="@HandleAccountSubmit" />
+
+                    @if (ErrorMessage is not null)
+                    {
+                                    <div class="alert alert-danger">@ErrorMessage</div>
+                    }
+
+                        </div>
+                    </div>
+        }
+        @if (tab3)
+        {
+                    <div class="tabcontent">
+                        <div class="create-account-container mb-4 shadow">
+                            <h3 class="contacts-title fs-3 fw-bold mb-4">Address:</h3>
+
+                            <AddressForm Address="@Address" OnSubmit="@HandleAddressSubmit" AddressOnPrevious="@HandlePreviousView" />
+
+                    @if (ErrorMessage is not null)
+                    {
+                                    <div class="alert alert-danger">@ErrorMessage</div>
+                    }
+
+                        </div>
+                    </div>
+        }
+
+        @if (tab4)
+        {
+                    <div class="tabcontent">
+                        <div class="contacts-group mb-4 shadow">
+
+                            <h3 class="contacts-title fs-3 fw-bold mb-4">Company Contacts:</h3>
+                            <ContactsForm ContactList="@ContactList" Contacts="@Contacts" Company="@Company" FirstName="@FirstName"
+                          LastName="@LastName" Email="@Email" Number="@Number" IsEdit="false" ContactError="@ContactError"
+                          OnSubmit="@HandleContactsSubmit" ContactsOnPrevious="HandlePreviousView" />
+
+                        </div>
+
+                    </div>
+        }
+
+        @if (tab5)
+        {
+                    <div class="tabcontent">
+                        <form>
+                            <div class="types-categories-group mb-4 shadow">
+
+                                <h3 class="prompt fw-bold mb-4">Select Your Business Types and Business Categories:</h3>
+                                <p class="fw-bold">
+                                    Please check all types and categories that relate to your business.
+                                    Click next when done.
+                                </p>
+                                <div class="layout">
+                                    <div class="search-view-type">
+                                        <div class="input-group mb-3">
+                                            <label for="search" hidden>Search Type </label>
+                                            <input type="text" id="search" placeholder=" Search Type... "
+                                   @onkeyup="@FilterKeyUp" @bind-value="@FilterTypeString" class="type-search-input form-control mb-3" />
+                                            <button class="btn btn-sm btn-secondary" type="button" @onclick="ButtonFilterClick">Search</button>
+                                        </div>
+
+
+                                        <div class="types mt-3">
+                                            <p class="types-title fs-5 fw-bold">Business Type</p>
+
+                                            <ul class="type-data">
+                                        @if (QueryableTypes is not null)
+                                        {
+                                            @foreach (var type in QueryableTypes)
+                                            {
+                                                @if (CheckedTypes.Any(checkedType => checkedType.Id == type.Id))
+                                                {
+                                                                        <li style="height: 35px;" class="typeLi mb-1">
+                                                                            <label class="d-flex align-items-center" id="key" for="@type.Type_Name">
+                                                                                <input checked style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @key="type.Id" id="@type.Type_Name" value="@type.Is_Checked" @onchange="args => HandleTypeChange(args, type.Id)" class="form-check-input type-check"
+                                               Name="TypeCheckbox" type="checkbox" /> @type.Type_Name
+                                                                            </label>
+                                                                            <br />
+                                                                        </li>
+                                                }
+                                                else
+                                                {
+                                                                        <li style="height: 35px;" class="typeLi mb-1">
+                                                                            <label class="d-flex align-items-center" id="key" for="@type.Type_Name">
+                                                                                <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @key="type.Id" id="@type.Type_Name" value="@type.Is_Checked" @onchange="args => HandleTypeChange(args, type.Id)" class="form-check-input type-check"
+                                               Name="TypeCheckbox" type="checkbox" /> @type.Type_Name
+                                                                            </label>
+                                                                            <br />
+                                                                        </li>
+                                                }
+                                            }
+                                        }
+                                            </ul>
+
+                                        </div>
+                                    </div>
+
+                                    <div class="view-search-type">
+                                        <div class="input-group mb-3">
+                                            <label for="search-cat" hidden>Search Category</label>
+                                            <input type="text" id="search-cat" placeholder=" Search Category... "
+                                   @onkeyup="@FilterKeyUp" @bind-value="@FilterCategoryString" class="category-search-input form-control mb-3" />
+                                            <button class="btn btn-sm btn-secondary" type="button" @onclick="ButtonFilterClick">Search</button>
+                                        </div>
+
+
+                                        <div class="categories mt-3">
+
+                                            <p class="cat-title fs-5 fw-bold">Business Categories</p>
+
+                                            <ul class="cat-data">
+                                        @if (QueryableCategories is not null)
+                                        {
+                                            @foreach (var cat in QueryableCategories)
+                                            {
+                                                @if (Types is not null)
+                                                {
+                                                    var type = Types.FirstOrDefault(type => type.Id == cat.Type_Id);
+
+                                                    @if (CheckedCategories.Any(checkedcat => checkedcat.Id == cat.Id) && type is not null)
+                                                    {
+                                                                                <li style="height: 35px;" class="catLi mb-1">
+                                                                                    <label class="d-flex align-items-center" id="key" for="@cat.Category_Name">
+                                                                                        <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" checked @key="cat.Id" @onchange="(args) => HandleCategoryChange(args, cat.Id)" class="form-check-input cat-check" id="@cat.Category_Name"
+                                               name="@cat.Category_Name" type="checkbox" /><strong class="mr-1">@type.Type_Name:</strong> @cat.Category_Name
+                                                                                    </label>
+                                                                                    <br />
+                                                                                </li>
+                                                    }
+                                                    else if (!CheckedCategories.Any(checkedcat => checkedcat.Id == cat.Id) && type is not null)
+                                                    {
+
+                                                                                <li style="height: 35px;" class="catLi mb-1">
+                                                                                    <label class="d-flex align-items-center" id="key" for="@cat.Category_Name">
+                                                                                        <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @key="cat.Id" @onchange="(args) => HandleCategoryChange(args, cat.Id)" class="form-check-input cat-check" id="@cat.Category_Name"
+                                               name="@cat.Category_Name" type="checkbox" /><strong class="mr-1">@type.Type_Name: </strong> @cat.Category_Name
+                                                                                    </label>
+                                                                                    <br />
+                                                                                </li>
+                                                    }
+                                                }
+                                            }
+                                        }
+                                            </ul>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                                <p class="fw-bold mt-2">Contacts Selected: @CategoryCount</p>
+
+                                <div class="align-self-start mb-2">
+                                    <button type="button" @onclick="() => HandlePreviousView(5)" class="btn btn-primary mr-2">Previous</button>
+                                    <button type="button" @onclick="() => HandleTypesCatsSubmit()" class="btn btn-primary">Next</button>
+                                </div>
+
+                        @if (ErrorMessage is not null)
+                        {
+                                        <div class="alert alert-danger">@ErrorMessage</div>
+                        }
+                            </div>
+
+                        </form>
+                    </div>
+        }
+
+        @if (tab6)
+        {
+                    <AuthorizeView Policy="AdminOrSuperUser">
+                        <Authorized>
+                            <div class="tab-content">
+                                <div class="reg-complete-group mt-3 mb-4 shadow">
+                                    <div class="text-center d-flex flex-column align-items-center">
+                                        <h1 class="mt-0"><i alt="check mark icon" class="fa-solid fa-check"></i></h1>
+
+                                        <h2 class="mt-0">Registration Complete!</h2>
+
+                                        <label style="font-size: 1.25rem;" class="d-flex align-items-center align-self-center mb-4 mt-2" for="legal">
+                                    @if (ComplianceAgreement)
+                                    {
+                                                    <input checked style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+
+                                    }
+                                    else
+                                    {
+                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+                                    }
+
+                                            Are you sure you want to activate this account?<span style="color: red;"> *</span>
+                                        </label>
+                                        <br />
+                                        <a @onclick="() => HandleRegisterSubmit()" class="fw-bold btn btn-success mb-2">Submit and Create Account</a>
+                                        <button type="button" @onclick="() => HandlePreviousView(6)" class="align-self-start btn btn-primary mb-3 mr-2">Previous</button>
+
+                                    </div>
+                            @if (ErrorMessage is not null)
+                            {
+                                            <div class="alert alert-danger mt-3 text-center">@ErrorMessage</div>
+                            }
+                                </div>
+                            </div>
+                        </Authorized>
+                    </AuthorizeView>
+
+                    <AuthorizeView Policy="HHCUser">
+                        <Authorized>
+                            <div class="tab-content">
+                                <div class="reg-complete-group mt-3 mb-4 shadow">
+                                    <div class="text-center d-flex flex-column align-items-center">
+                                        <h1 class="mt-0"><i alt="check mark icon" class="fa-solid fa-check"></i></h1>
+
+                                        <h2 class="mt-0">Registration Complete!</h2>
+
+                                        <label style="font-size: 1.25rem;" class="d-flex align-items-center align-self-center mb-4 mt-2" for="legal">
+                                    @if (ComplianceAgreement)
+                                    {
+                                                    <input checked style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+                                    }
+                                    else
+                                    {
+                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+                                    }
+
+                                            Are you sure you want to activate this account?<span style="color: red;"> *</span>
+                                        </label>
+                                        <br />
+                                        <a @onclick="() => HandleRegisterSubmit()" class="fw-bold btn btn-success mb-2">Submit and Create Account</a>
+                                        <button type="button" @onclick="() => HandlePreviousView(6)" class="align-self-start btn btn-primary mb-3 mr-2">Previous</button>
+
+                                    </div>
+                            @if (ErrorMessage is not null)
+                            {
+                                            <div class="alert alert-danger mt-3 text-center">@ErrorMessage</div>
+                            }
+                                </div>
+                            </div>
+                        </Authorized>
+                    </AuthorizeView>
+
+                    <AuthorizeView>
+                        <NotAuthorized>
+                            <div class="tab-content">
+                                <div class="reg-complete-group mt-3 mb-4 shadow">
+                                    <div class="text-center d-flex flex-column align-items-center">
+
+                                        <h2 class="mt-0 mb-2">Vendor Compliance</h2>
+
+                                        <h4 class="w-75 mb-2 mx-auto">Please read the Vendor Compliance Statement below and follow the instructions. 
+                                            After submitting, a link will be sent to your email to verify your acount.</h4>
+                                        <p style="width: 80%;">
+                                            Completion of this Form does not guarantee doing business with HHC.
+                                            Participation in Sourcing Events and activities posted at <a target="blank" href="http://purchasing.hhcorp.org/">http://purchasing.hhcorp.org/</a> 
+                                            (Request for Quotes, Request for Proposals, Bids & Bids for Public Works Projects) will provide an opportunity for Vendor Selection.
+                                        </p>
+
+                                        <a class="btn btn-sm btn-primary mb-4" target="blank" href="https://www.hhcorp.org/Purch_TermsConditions.html" @onclick="() => ViewTerms()">View Terms and Conditions</a>
+
+                                        <label class="d-flex align-items-center align-self-center mb-2" for="legal">
+                                    @if (!viewTerms)
+                                    {
+                                                    <input disabled style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+                                    }
+                                    else if (viewTerms && !ComplianceAgreement)
+                                    {
+                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+                                    }
+                                    else if (ComplianceAgreement && viewTerms)
+                                    {
+                                                    <input checked style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+                                    }
+                                            I have read and agree to the terms and conditions of the Vendors Compliance Statement and will verify my account through email <span style="color: red;"> *</span>
+                                        </label>
+                                        <br />
+                                        <button disabled="@disabled" type="button" @onclick="() => HandleRegisterSubmit()" class="fw-bold btn btn-success">Submit and Verify Account</button>
+                                        <button type="button" @onclick="() => HandlePreviousView(6)" class="btn btn-primary mt-2 mb-3 mr-2 align-self-start">Previous</button>
+
+                                    </div>
+                            @if (ErrorMessage is not null)
+                            {
+                                            <div class="alert alert-danger mt-3 text-center">@ErrorMessage</div>
+                            }
+                                </div>
+                            </div>
+                        </NotAuthorized>
+                    </AuthorizeView>
+        }
+        </div>
+}
+
+@code {
+    public Company? Company { get; set; }
+    public VendorAccount? Account { get; set; }
+    public Address? Address { get; set; }
+    public Authorized_Contacts? Authorized_Contact { get; set; }
+    public Business_Types? Type { get; set; }
+    public Business_Categories? Category { get; set; }
+    private DateTime SignUpDate { get; set; }
+    public Company_Types_Categories? CompanyTypeAndCat { get; set; }
+    private string? password2 { get; set; }
+    private bool PasswordMatch { get; set; }
+    private List<Business_Types> CheckedTypes = new List<Business_Types>();
+    private List<Business_Categories> CheckedCategories = new List<Business_Categories>();
+    public List<Company_Types_Categories>? CompanyCategories = new List<Company_Types_Categories>();
+
+    private string FirstName { get; set; } = default!;
+    private string LastName { get; set; } = default!;
+    private string Email { get; set; } = default!;
+    private double? Number { get; set; }
+    private string? ContactError { get; set; } = default!;
+
+    public List<Business_Types>? Types { get; set; }
+    public Business_Types[]? QueryableTypes { get; set; }
+    public List<Business_Categories>? Categories { get; set; }
+    public List<Company>? Companies { get; set; }
+    public List<VendorAccount>? Accounts { get; set; }
+    private List<Authorized_Contacts> Contacts { get; set; }
+    public List<Business_Categories>? QueryableCategories = new List<Business_Categories>();
+    private List<Authorized_Contacts>? ContactList { get; set; }
+    private List<Business_Categories> FilteredCategories = new List<Business_Categories>();
+    private string? FilterTypeString { get; set; }
+    private string? FilterCategoryString { get; set; }
+    private int? CategoryCount { get; set; }
+    private string? ErrorMessage { get; set; }
+    private bool ComplianceAgreement = false;
+    private bool CompanyAdded = false;
+    private Vendor_Links? vendorLinks = new Vendor_Links();
+    private List<System.Security.Claims.Claim> claims { get; set; }
+    private string? role { get; set; }
+    private bool disabled = false;
+    private bool viewTerms = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
+        if (userAuth is not null)
+        {
+            claims = userAuth.User.Claims.ToList();
+        }
+
+        if (claims is not null)
+        {
+            role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+        }
+
+        Companies = companyService.GetAllCompanies();
+        Accounts = accountService.GetVendorAccounts();
+        Types = typeService.GetTypesForRegistration();
+        Categories = categoryService.GetCategoriesForRegistration();
+        Accounts = accountService.GetVendorAccounts();
+        CategoryCount = 0;
+
+        Company = new();
+        Account = new();
+        Address = new();
+        Contacts = new List<Authorized_Contacts>();
+        ContactList = new List<Authorized_Contacts>();
+        Authorized_Contact = new Authorized_Contacts();
+        Type = new();
+        Category = new();
+        SignUpDate = DateTime.Now;
+
+        await LoadData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        ErrorMessage = null;
+
+        IQueryable<Business_Types> TypeQuery = typeService.GetTypesNotDisabledAndNotDeletedQueryable();
+        TypeQuery = AddTypeFilter(TypeQuery);
+        QueryableTypes = await TypeQuery.OrderBy(type => type.Type_Name).ToArrayAsync();
+
+        if (!string.IsNullOrWhiteSpace(FilterCategoryString) && QueryableCategories is not null)
+        {
+            QueryableCategories.Clear();
+            foreach (var cat in FilteredCategories.Where(cat => cat.Category_Name != null && cat.Category_Name.ToLower().Contains(this.FilterCategoryString.ToLower())))
+            {
+                QueryableCategories.Add(cat);
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(FilterCategoryString) && QueryableCategories is not null)
+        {
+            QueryableCategories.Clear();
+            foreach (var cat in FilteredCategories)
+            {
+                QueryableCategories.Add(cat);
+            }
+        }
+    }
+
+    private bool tab1 = true;
+    private bool tab2 = false;
+    private bool tab3 = false;
+    private bool tab4 = false;
+    private bool tab5 = false;
+    private bool tab6 = false;
+
+
+    public void DisplayTab(int TabNumber)
+    {
+        ErrorMessage = null;
+
+        switch (TabNumber)
+        {
+            case 1:
+                this.tab1 = true;
+                this.tab2 = false;
+                this.tab3 = false;
+                this.tab4 = false;
+                this.tab5 = false;
+                this.tab6 = false;
+                break;
+            case 2:
+                this.tab1 = false;
+                this.tab2 = true;
+                this.tab3 = false;
+                this.tab4 = false;
+                this.tab5 = false;
+                this.tab6 = false;
+                break;
+            case 3:
+                this.tab1 = false;
+                this.tab2 = false;
+                this.tab3 = true;
+                this.tab4 = false;
+                this.tab5 = false;
+                this.tab6 = false;
+                break;
+            case 4:
+                this.tab1 = false;
+                this.tab2 = false;
+                this.tab3 = false;
+                this.tab4 = true;
+                this.tab5 = false;
+                this.tab6 = false;
+                break;
+            case 5:
+                this.tab1 = false;
+                this.tab2 = false;
+                this.tab3 = false;
+                this.tab4 = false;
+                this.tab5 = true;
+                this.tab6 = false;
+                break;
+            case 6:
+                this.tab1 = false;
+                this.tab2 = false;
+                this.tab3 = false;
+                this.tab4 = false;
+                this.tab5 = false;
+                this.tab6 = true;
+                break;
+        }
+    }
+
+    private async Task HandleCompanySubmit(bool isValid)
+    {
+        if (isValid)
+        {
+            CompanyAdded = true;
+            DisplayTab(2);
+        }
+    }
+
+    private void HandleAccountSubmit(bool isValid)
+    {
+        if (isValid)
+        {
+            if (Account is not null && Account.Email is not null && Companies is not null && Company is not null && Accounts is not null)
+            {
+
+                var matchingAccounts = Accounts.Where(account => account.Email == Account.Email);
+                var existingUser = false;
+                Company existingCompany;
+
+                foreach (var account in matchingAccounts)
+                {
+                    var company = Companies.FirstOrDefault(company => company.Id == account.CompanyId);
+                    if (company is not null && company.Completed_Registeration)
+                    {
+                        existingUser = true;
+                        existingCompany = company;
+
+                        if (existingUser && existingCompany is not null && existingCompany.Is_Deleted && !Company.Is_Deleted)
+                        {
+                            ErrorMessage = $"An account already exists with this email for the company '{existingCompany.Name}'. The account for the company has been deleted, please contact Purchasing at Adelaide Mhlanga at amhlanga@hhcorp.org or 317.221.2038 for more information.";
+                            return;
+                        }
+                        else if (existingUser && existingCompany is not null && !Company.Is_Deleted)
+                        {
+                            ErrorMessage = $"An account already exists with this email for the company '{existingCompany.Name}'.";
+                            return;
+                        }
+                        else if (existingUser)
+                        {
+                            ErrorMessage = "An account already exists with this email";
+                            return;
+                        }
+                    }
+                }
+
+                Account.CompanyId = Company.Id;
+                Account.Email = Account.Email.ToLower();
+                ErrorMessage = null;
+                password2 = Account.Password;
+                DisplayTab(3);
+            }
+        }
+    }
+
+    private void HandleAddressSubmit(bool isValid)
+    {
+        if (isValid)
+        {
+            if (Address is not null && Company is not null)
+            {
+                Address.CompanyId = Company.Id;
+                DisplayTab(4);
+            }
+        }
+    }
+
+    private async Task HandleContactsSubmit(bool isValid)
+    {
+        if (isValid)
+        {
+            if (Authorized_Contact is not null && Company is not null)
+            {
+                ContactError = null;
+                Authorized_Contact.CompanyId = Company.Id;
+                ErrorMessage = null;
+                DisplayTab(5);
+
+            }
+        }
+        else
+        {
+            await LoadData();
+        }
+    }
+
+    private void HandleTypesCatsSubmit()
+    {
+        if (CategoryCount == 0)
+        {
+            ErrorMessage = "No Contacts selected. Please select a contact.";
+            return;
+        }
+        foreach (var cat in CheckedCategories)
+        {
+            if (Company is not null)
+            {
+                CompanyTypeAndCat = new Company_Types_Categories();
+                CompanyTypeAndCat.CompanyId = Company.Id;
+                CompanyTypeAndCat.Category_Id = cat.Id;
+                CompanyTypeAndCat.Type_Id = cat.Type_Id;
+
+                if (CompanyCategories is not null)
+                {
+                    if (!CompanyCategories.Any(c => c.Category_Id == cat.Id))
+                    {
+                        CompanyCategories.Add(CompanyTypeAndCat);
+                    }
+                }
+            }
+        }
+        ErrorMessage = null;
+        DisplayTab(6);
+    }
+
+    private void HandleRegisterSubmit()
+    {
+        disabled = true;
+
+        if (Company != null && Account != null && Address != null && CompanyCategories != null)
+        {
+            if (role != "Admin" && role != "HHCUser" && !viewTerms)
+            {
+                ErrorMessage = "Please click on the view terms and conditions button and check if you accept.";
+                disabled = false;
+                return;
+            }
+            if (!ComplianceAgreement)
+            {
+                ErrorMessage = "Please check the box to confirm the information is correct and want to create account";
+                disabled = false;
+                return;
+            }
+
+            if (ComplianceAgreement)
+            {
+                try
+                {
+
+                if (Company is not null && Company.Fed_Id_SSN is not null && vendorLinks is not null)
+                {
+
+                    var salt = BCrypt.Net.BCrypt.GenerateSalt(12);
+                    Account.Password = BCrypt.Net.BCrypt.HashPassword(Account.Password, salt);
+
+                    if (role == "Admin" || role == "HHCUser")
+                    {
+                        registerService.CreateVendorAccount(Company, Account, Address, CompanyCategories, true, vendorLinks, ContactList);
+                    }
+                    else
+                    {
+
+                        registerService.CreateVendorAccount(Company, Account, Address, CompanyCategories, false, vendorLinks, ContactList);
+                    }
+                }
+
+                if (role == "Admin" || role == "User" || role == "HHCUser")
+                {
+                    ErrorMessage = null;
+                    NavigationManager.NavigateTo($"/");
+                }
+                else
+                {
+                    ErrorMessage = null;
+                    NavigationManager.NavigateTo($"account/login");
+                }
+                }
+                catch
+                {
+                    disabled = false;
+                    ErrorMessage = "There was an error while creating account";               //Temporary commented out to seek causes of error
+                    return;
+                }
+            }
+        }
+    }
+
+    private async Task HandleTypeChange(ChangeEventArgs args, int TypeId)
+    {
+        if (Types is not null)
+        {
+            changeService.TypeChange(args, TypeId, Types, Type, CheckedTypes);
+            await LoadCategories();
+        }
+    }
+
+    private async Task LoadCategories()
+    {
+        if (Categories is not null)
+        {
+            changeService.CategoryLoad(FilteredCategories, CheckedTypes, Categories);
+            await LoadData();
+        }
+    }
+
+    private void HandleCategoryChange(ChangeEventArgs args, int CatId)
+    {
+        if (Categories is not null)
+        {
+            changeService.CategoryChange(args, CatId, Categories, Category, CheckedCategories);
+            CategoryCount = CheckedCategories.Count();
+        }
+    }
+
+    private void HandlePreviousView(int tab)
+    {
+        DisplayTab(tab - 1);
+    }
+
+    private async Task FilterKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task ButtonFilterClick()
+    {
+        await LoadData();
+    }
+
+    private IQueryable<Business_Types> AddTypeFilter(IQueryable<Business_Types> TypeQuery)
+    {
+        if (!string.IsNullOrWhiteSpace(FilterTypeString))
+        {
+            return TypeQuery.Where(type => type.Type_Name != null && type.Type_Name.Contains(this.FilterTypeString));
+        }
+        return TypeQuery;
+    }
+
+    private void HandleComplianceAgreement()
+    {
+        ComplianceAgreement = !ComplianceAgreement;
+    }
+
+    private void ViewTerms()
+    {
+        viewTerms = true;
+    }
+}

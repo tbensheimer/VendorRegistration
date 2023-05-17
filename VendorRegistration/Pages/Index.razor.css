@@ -1,0 +1,102 @@
+﻿.container {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    grid-gap: 30px !important;
+}
+
+.todo {
+    color: rgb(90, 89, 89) !important;
+}
+
+.layout {
+    width: 90% !important;
+}
+
+.panel {
+    padding: 20px !important;
+    border-radius: 6px !important;
+    position: relative !important;
+    display: flex !important;
+    width: 45% !important;
+    max-width: 28rem;
+    align-items: center !important;
+    justify-content: space-around !important;
+    background-color: white !important;
+}
+
+    .panel:hover {
+        transform: scale(1.05) !important;
+    }
+
+
+i {
+    color: rgb(202, 200, 200) !important;
+}
+
+.title {
+    color: rgb(90, 89, 89) !important;
+}
+
+.desc {
+    color: rgb(126, 125, 125) !important;
+    font-weight: 500 !important;
+}
+
+#apex-chart1, #apex-chart2 {
+    min-width: 380px;
+}
+
+#apex-chart2 {
+    width: 90%;
+}
+
+@media (max-width: 1160px) {
+    #apex-chart2 {
+        width: 100%;
+    }
+}
+
+@media (max-width: 1050px) {
+
+    .grid {
+        grid-template-columns: 1fr !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+
+    .panel {
+        width: 90% !important;
+        max-width: 22rem !important;
+        background-color: white !important;
+        min-width: 15rem;
+    }
+
+        .panel .desc {
+            width: 99% !important;
+        }
+
+    .home-panel {
+        background-color: white !important;
+    }
+}
+
+@media (max-width: 500px) {
+    #apex-chart1, #apex-chart2 {
+        display: none;
+    }
+}
+
+@media (max-width: 400px) {
+
+    .grid {
+        align-items: start !important;
+    }
+}

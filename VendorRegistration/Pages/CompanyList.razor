@@ -1,0 +1,424 @@
+﻿@page "/companies"
+@page "/companies/{deletedOnly:bool}"
+@inject IJSRuntime JS
+@inject CompanyService companyService
+@inject CompanyTypesAndCatsService ctcService
+@inject CategoryService categoryService
+@inject TypeService typeService
+
+
+<AuthorizeView Policy="AdminOrSuperUser">
+    <Authorized>
+        <div class="container d-flex flex-column align-items-center position-relative">
+
+            <div class="d-flex flex-column" style="width: 100%;">
+                <a class="btn btn-sm btn-secondary align-self-start" href="/"><i class="fa-solid fa-sm fa-chevron-left"></i> Home</a>
+                @if (deletedOnly)
+                {
+                    <h2 class="mb-4 title text-center align-self-center">Deleted Companies</h2>
+                }
+                else
+                {
+                    <h2 class="mb-4 title text-center align-self-center">Companies Registered</h2>
+                }
+            </div>
+
+            @if (!deletedOnly)
+            {
+                <div class="tab-div">
+                    <button @onclick="@HandleCompaniesActive" class="tab1-btn send-notifs-content @(ActiveCompanies == true ? "active-page" : "")" type="button">Companies (@(ActiveCompaniesList?.Count() > 0 ? ActiveCompaniesList?.Count() : 0))</button>
+                    <button @onclick="@HandleRemovedActive" class="tab2-btn btn prev-notifs-content @(RemovedCompanies == true ? "active-page" : "")" type="button">Removed Companies (@(RemovedCompaniesList?.Count() > 0 ? RemovedCompaniesList?.Count() : 0))</button>
+                </div>
+            }
+
+            <PageTitle>Companies Registered</PageTitle>
+
+            @if (Companies is null)
+            {
+                <div>Loading...</div>
+            }
+            else
+            {
+                <a href="/register" style="align-self: flex-start !important;" class="fw-bold btn btn-sm btn-primary ml-2 mb-2">Add Company</a>
+
+                <div style="width: 100%;" class="row">
+                    <div class="col-12">
+                        <div class="card" style="overflow: visible; box-shadow: 0px 0px 10px 4px rgb(230, 228, 228);">
+                            <div class="card-body">
+
+                                @if (ActiveCompanies)
+                                {
+                                    <div class="table-wrapper pb-2">
+
+                                        <table id="company-table" class="table dt-responsive">
+                                            <thead class="text-center">
+                                                <tr>
+                                                    <th class="col-md-3">Companies Registered</th>
+                                                    <th class="col-md-4">Categories</th>
+                                                    <th class="col-md-2">Disable Notifications</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="text-center">
+                                                @if (ActiveCompaniesList is not null)
+                                                {
+                                                    @foreach (var company in ActiveCompaniesList)
+                                                    {
+
+                                                        <tr id="row-@company.Id">
+                                                            <td><div><button class="btn" style="color: rgb(90, 89, 89); border:none; background-color: transparent !important;  @(company.Disabled_From_Notifications == true ? "color:#9b9999;" : "") background-color: #f9fafb;" id="company">@company.Name</button></div></td>
+                                                            <td>@ShowCategories(company.Id)</td>
+                                                            <td>
+                                                                @if (company.Disabled_From_Notifications)
+                                                                {
+                                                                    <RadzenText hidden TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Disable 1</RadzenText>
+                                                                    <RadzenSwitch class="rz-switch-checked p-2" Change="() => HandleCompanyDisabled(company.Disabled_From_Notifications, company.Id)" />
+                                                                }
+                                                                else
+                                                                {
+                                                                    <RadzenText hidden TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Disable 0</RadzenText>
+                                                                    <RadzenSwitch class="p-2" Change="() => HandleCompanyDisabled(company.Disabled_From_Notifications, company.Id)" />
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                <div class="dropdown" id="dropdown">
+                                                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                        Actions
+                                                                    </button>
+                                                                    <ul class="dropdown-menu">
+                                                                        <li><a class="dropdown-item text-primary" href="/edit/@company.Id"><span><i style="color: #0b5ed7;" class="fa-solid fa-address-book"></i></span> View/Edit</a></li>
+                                                                        @if (deletedOnly)
+                                                                        {
+                                                                            <li class="mt-1 mb-1"><button @onclick="() => HandleCompanyEnable(company.Id)" id="enable" style="height: auto; margin: 5px 0;" class="dropdown-item text-success"><span><i style="color: #0acf97;" class="fa-solid fa-circle-up"></i></span> Enable</button></li>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <li class="mt-1 mb-1"><button @onclick="() => HandleCompanyDelete(company.Id)" id="trash" style="height: auto; margin: 5px 0;" class="dropdown-item text-danger fw-bold"><span><i style="color: #dc3545;" class="fa-solid fa-trash-can"></i></span> Remove</button></li>
+                                                                        }
+                                                                    </ul>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+
+                                    </div>
+                                }
+
+                                @if (RemovedCompanies && !deletedOnly)
+                                {
+                                    <div class="table-wrapper pb-2">
+
+                                        <table id="removed-table" class="table">
+                                            <thead class="text-center">
+                                                <tr>
+                                                    <th class="col-md-1">Companies Registered</th>
+                                                    <th class="col-md-5">Categories</th>
+                                                    <th class="col-md-1">Disable Notifications</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="text-center">
+                                                @if (RemovedCompaniesList is not null)
+                                                {
+                                                    @foreach (var company in RemovedCompaniesList)
+                                                    {
+                                                        <tr id="row-@company.Id">
+                                                            <td><div><button class="btn" style="color: rgb(90, 89, 89); border:none; background-color: transparent !important;  @(company.Disabled_From_Notifications == true ? "color:#9b9999;" : "") background-color: #f9fafb;" id="company">@company.Name</button></div></td>
+                                                            <td> @ShowCategories(company.Id)</td>
+                                                            <td>
+                                                                @if (company.Disabled_From_Notifications)
+                                                                {
+                                                                    <RadzenText hidden TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Disable 1</RadzenText>
+                                                                    <RadzenSwitch class="rz-switch-checked p-2" Change="() => HandleCompanyDisabled(company.Disabled_From_Notifications, company.Id)" />
+                                                                }
+                                                                else
+                                                                {
+                                                                    <RadzenText hidden TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Disable 0</RadzenText>
+                                                                    <RadzenSwitch class="p-2" Change="() => HandleCompanyDisabled(company.Disabled_From_Notifications, company.Id)" />
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                <div class="dropdown" id="dropdown">
+                                                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                        Actions
+                                                                    </button>
+                                                                    <ul class="dropdown-menu">
+                                                                        <li><a class="dropdown-item text-primary" href="/edit/@company.Id"><span><i style="color: #0b5ed7;" class="fa-solid fa-address-book"></i></span> View/Edit</a></li>
+
+                                                                        <li class="mt-1 mb-1"><button @onclick="() => HandleCompanyEnable(company.Id)" id="enable" style="height: auto; margin: 5px 0;" class="dropdown-item text-success"><span><i style="color: #0acf97;" class="fa-solid fa-circle-up"></i></span> Enable</button></li>
+                                                                    </ul>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        @if (SuccessMessage is not null)
+                        {
+                            <div class="alert alert-success">@SuccessMessage</div>
+                        }
+                        @if (ErrorMessage is not null)
+                        {
+                            <div class="alert alert-danger">@ErrorMessage</div>
+                        }
+                    </div>
+
+                </div>
+            }
+        </div>
+
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-danger text-center">You are not authorized to view this page.</div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [Parameter]
+    public bool deletedOnly { get; set; }
+    private List<Company>? Companies { get; set; }
+    private List<Company>? ActiveCompaniesList { get; set; }
+    private List<Company>? RemovedCompaniesList { get; set; }
+    private List<Company_Types_Categories>? CompTypeCatList { get; set; }
+    private List<Business_Types>? Types { get; set; }
+    private List<Business_Categories>? Categories { get; set; }
+
+    private bool ActiveCompanies = true;
+    private bool RemovedCompanies = false;
+
+    public Company? Company { get; set; }
+    public string? SuccessMessage { get; set; }
+    private string? ErrorMessage { get; set; }
+    private bool DataTablePresent { get; set; }
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadData();
+    }
+
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+
+        if (ActiveCompaniesList is not null && !DataTablePresent)
+        {
+            DataTablePresent = true;
+            await JS.InvokeAsync<string>("blazorInterop.DataTablesAddOrderByDisabledCompany", "#company-table");
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Companies = companyService.GetVerifiedCompanies();
+
+        if (!deletedOnly)
+        {
+            ActiveCompaniesList = Companies.Where(comp => !comp.Is_Deleted).ToList();
+
+            RemovedCompaniesList = Companies.Where(comp => comp.Is_Deleted).ToList();
+        }
+        else
+        {
+            ActiveCompaniesList = Companies.Where(comp => comp.Is_Deleted).ToList();
+        }
+
+        CompTypeCatList = ctcService.GetAllCompanyTypesAndCats();
+
+        Types = typeService.GetTypesList();
+
+        Categories = categoryService.GetCategoriesList();
+
+        StateHasChanged();
+
+        SuccessMessage = null;
+
+    }
+
+
+    private async Task HandleCompanyDelete(int Id)
+    {
+        Company dbCompany = companyService.GetCompanyById(Id);
+
+        if (dbCompany is not null)
+        {
+            var isOk = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete Company {dbCompany.Name}?");
+
+            if (isOk)
+            {
+                try
+                {
+                    dbCompany.Is_Deleted = true;
+                    await companyService.DbUpdateCompanyAsync(dbCompany);
+
+                    await JS.InvokeAsync<string>("blazorInterop.DataTablesRemoveRow", $"#row-{Id}");
+                    await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#company-table");
+
+                    await DataTableChange();
+
+                    ErrorMessage = null;
+                    SuccessMessage = "Company successfully removed!";
+                }
+                catch
+                {
+                    await LoadData();
+                    ErrorMessage = "There was an error while removing Company. Please try again";
+                }
+
+            }
+        }
+    }
+
+
+    private async Task HandleCompanyDisabled(bool Disabled, int Id)
+    {
+        if (Companies is not null)
+        {
+            Company = Companies.FirstOrDefault(comp => comp.Id == Id);
+
+
+            if (Company is not null)
+            {
+                Company.Disabled_From_Notifications = !Company.Disabled_From_Notifications;
+                companyService.DbUpdateCompany(Company);
+            }
+
+            if (ActiveCompanies)
+            {
+                await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#company-table");
+
+                await JS.InvokeAsync<string>("blazorInterop.DataTablesAddOrderByDisabledCompany", "#company-table");
+            }
+
+            if (RemovedCompanies)
+            {
+                await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#removed-table");
+
+                await JS.InvokeAsync<string>("blazorInterop.DataTablesAddOrderByDisabledCompany", "#removed-table");
+            }
+        }
+    }
+
+    private async Task HandleCompanyEnable(int CompanyId)
+    {
+        if (Companies is not null)
+        {
+            var dbCompany = Companies.FirstOrDefault(comp => comp.Id == CompanyId);
+
+            if (dbCompany is not null)
+            {
+                var isOk = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to enable the company {dbCompany.Name}?");
+
+                if (isOk)
+                {
+                    try
+                    {
+                        dbCompany.Is_Deleted = false;
+                        await companyService.DbUpdateCompanyAsync(dbCompany);
+
+                        if (deletedOnly)
+                        {
+                            await JS.InvokeAsync<string>("blazorInterop.DataTablesRemoveRow", $"#row-{CompanyId}");
+
+                            await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#company-table");
+                        }
+                        else
+                        {
+                            await JS.InvokeAsync<string>("blazorInterop.DataTablesRemoveRow", $"#row-{CompanyId}");
+
+                            await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#removed-table");
+                        }
+
+
+                        await DataTableChange();
+
+                        SuccessMessage = "Successfully enabled company!";
+                    }
+                    catch
+                    {
+                        await LoadData();
+                        ErrorMessage = "There was an error while enabling the company. Please try again.";
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task HandleCompaniesActive()
+    {
+        await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#removed-table");
+
+        ActiveCompanies = true;
+        RemovedCompanies = false;
+        await DataTableChange();
+
+    }
+
+    private async Task HandleRemovedActive()
+    {
+        await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#company-table");
+
+        ActiveCompanies = false;
+        RemovedCompanies = true;
+        await DataTableChange();
+    }
+
+    private async Task DataTableHandling()
+    {
+        if (ActiveCompanies)
+        {
+            await JS.InvokeAsync<string>("blazorInterop.DataTablesAddOrderByDisabledCompany", "#company-table");
+
+        }
+        if (RemovedCompanies)
+        {
+            await JS.InvokeAsync<string>("blazorInterop.DataTablesAddOrderByDisabledCompany", "#removed-table");
+        }
+    }
+
+    private async Task DataTableChange()
+    {
+        await LoadData();
+        StateHasChanged();
+        await DataTableHandling();
+    }
+
+    private MarkupString ShowCategories(int companyId)
+    {
+        List<MarkupString> categories = new();
+
+        if (CompTypeCatList is not null && Categories is not null)
+        {
+            List<Company_Types_Categories> compTypeCatList = ctcService.GetCompanyTypesAndCatsFromCompanyIdAndFromGivenList(companyId, CompTypeCatList);
+
+            foreach (var ctc in compTypeCatList)
+            {
+                Business_Categories category = categoryService.GetCategoryFromIdAndGivenList(ctc.Category_Id, Categories);
+
+                Business_Types type = typeService.GetTypeFromIdAndGivenList(ctc.Type_Id, Types);
+
+                if (category is not null && category.Category_Name is not null && !category.Is_Deleted)
+                {
+
+                    MarkupString typeCat = new MarkupString($"{"<b>" + type.Type_Name + "</b>" + ": " + category.Category_Name + "<br />"}");
+                    categories.Add(typeCat);
+                }
+            }
+        }
+
+        string stringTypeCat = string.Join(" ", categories.ToArray());
+
+        MarkupString markup = new MarkupString($"{stringTypeCat}");
+
+
+        return markup;
+    }
+}

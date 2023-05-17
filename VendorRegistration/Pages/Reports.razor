@@ -1,0 +1,68 @@
+﻿@page "/reports"
+@inject IConfiguration _config
+
+<AuthorizeView Policy="AdminOrSuperUser">
+    <Authorized>
+        <div class="container d-flex flex-column align-items-center position-relative">
+
+            <div class="d-flex flex-column" style="width: 100%;">
+                <a class="btn btn-sm btn-secondary align-self-start" href="/"><i class="fa-solid fa-sm fa-chevron-left"></i> Home</a>
+                <h2 class="mb-4 title text-center align-self-center">Reporting</h2>
+            </div>
+
+            <table class="table table-striped">
+                <tbody>
+                    @foreach (var report in _config.GetSection("Reports").GetChildren())
+                    {
+                        <tr>
+                            <td class="col-md-1">
+                                <a class="btn btn-primary btn-sm" href="@report.Value" target="_blank">
+                                    <i class="fa-solid fa-play"></i>
+                                    Run
+                                </a>
+                            </td>
+                            <td class="col-md-11">
+                                <h5>@report.Key</h5>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+<AuthorizeView Policy="HHCUser">
+    <Authorized>
+        <div class="container d-flex flex-column align-items-center position-relative">
+
+            <div class="d-flex flex-column" style="width: 100%;">
+                <a class="btn btn-sm btn-secondary align-self-start" href="/"><i class="fa-solid fa-sm fa-chevron-left"></i> Home</a>
+                <h2 class="mb-4 title text-center align-self-center">Reporting</h2>
+            </div>
+
+            <table class="table table-striped">
+                <tbody>
+                    @foreach (var report in _config.GetSection("Reports").GetChildren())
+                    {
+                        <tr>
+                            <td class="col-md-1">
+                                <a class="btn btn-primary btn-sm" href="@report.Value" target="_blank">
+                                    <i class="fa-solid fa-play"></i>
+                                    Run
+                                </a>
+                            </td>
+                            <td class="col-md-11">
+                                <h5>@report.Key</h5>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    // Add reports in appsettings.json
+}

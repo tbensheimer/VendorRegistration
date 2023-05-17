@@ -1,0 +1,344 @@
+﻿@inject EncryptionService encryptionService;
+@inject CompanyService companyService;
+
+<EditForm Model="@Company" OnValidSubmit="() => HandleCompanyComplete()" OnInvalidSubmit="() => HandleCompanyIncomplete()">
+	<DataAnnotationsValidator />
+	<ValidationSummary />
+	@if (Company is not null)
+	{
+		@if (IsEdit)
+		{
+			<label for="signup" class="fw-bold">Sign Up Date</label>
+			<input class="form-control name mb-2" id="signup" name="sign-up-date" type="text" value="@Company.Sign_Up" readonly />
+		}
+
+		<label for="company-name" class="fw-bold">Company Name<span style="color: red;"> *</span></label>
+		<InputText @bind-Value="@Company.Name" class="form-control name mb-2" id="company-name" name="company-name" type="text" />
+
+		<div>
+			@if (IsEdit)
+			{
+				@if (Company.EmployeeIdNumber)
+				{
+					<label for="id" class="fw-bold">Social Security Number or Employer ID Number <em>(format: XXXXXXXXX)</em><span style="color: red;"> *</span></label>
+
+					<br />
+					<div class="form-check form-check-inline">
+						<input @onchange="() => HandleIdChange(false)" class="form-check-input" type="radio" name="IdType" value="false" id="ssn">
+						<label class="form-check-label" for="ssn">Social Security Number (SSN)</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input checked @onchange="() => HandleIdChange(true)" class="form-check-input" type="radio" name="IdType" value="true" id="empId">
+						<label class="form-check-label" for="empId">Employer Id Number (EIN)</label>
+					</div>
+				}
+				else
+				{
+					<label for="id" class="fw-bold">Social Security Number or Employer ID Number <em>(format: XXXXXXXXX)</em><span style="color: red;"> *</span></label>
+
+					<br />
+					<div class="form-check form-check-inline">
+						<input checked @onchange="() => HandleIdChange(false)" class="form-check-input" type="radio" name="IdType" value="false" id="ssn">
+						<label class="form-check-label" for="ssn">Social Security Number (SSN)</label>
+					</div>
+					<div class="form-check form-check-inline">
+						<input @onchange="() => HandleIdChange(true)" class="form-check-input" type="radio" name="IdType" value="true" id="empId">
+						<label class="form-check-label" for="empId">Employer Id Number (EIN)</label>
+					</div>
+				}
+			}
+			else
+			{
+				<label for="id" class="fw-bold">Social Security Number or Employer ID Number <em>(format: XXXXXXXXX)</em><span style="color: red;"> *</span></label>
+
+				<br />
+				<div class="form-check form-check-inline">
+					<input checked @onchange="() => HandleIdChange(false)" class="form-check-input" type="radio" name="IdType" value="false" id="ssn">
+					<label class="form-check-label" for="ssn">Social Security Number (SSN)</label>
+				</div>
+				<div class="form-check form-check-inline">
+					<input @onchange="() => HandleIdChange(true)" class="form-check-input" type="radio" name="IdType" value="true" id="empId">
+					<label class="form-check-label" for="empId">Employer Id Number (EIN)</label>
+				</div>
+			}
+		</div>
+
+		@if (!IsEdit)
+		{
+			<InputText @bind-Value="@Company.Fed_Id_SSN" id="id" style=@((Company?.Fed_Id_SSN?.Count() == 9 ? "outline: 1px solid #26b050" : "outline: none !important;")) class="form-control id mb-2" type="text" name="federal-id-or-ssn-number" />
+
+		}
+		else
+		{
+			<input @bind-value="@fedId" id="id" class="form-control id mb-2" type="text" name="federal-id-or-ssn-number" />
+		}
+
+
+
+		@if (IsEdit)
+		{
+			<label for="formatted-id" class="fw-bold">Formatted Social Security Number or Federal I.D Number</label>
+			<input class="form-control mb-2" id="formatted-id" name="formatted-id" type="text" value="@FormattedId" readonly />
+		}
+
+		<label class="fw-bold" for="supp-cat">Supplier Category<span style="color: red;"> *</span></label>
+		<InputSelect @bind-Value="@Company.Supplier_Category" name="supplier-category" class="form-control supp-cat gray mb-2" id="supp-cat">
+			<option value="" selected>Choose Supplier Category...</option>
+			<option value="United States Entity">United States Entity</option>
+			<option value="Foreign Entity">Foreign Entity</option>
+		</InputSelect>
+
+		<label for="web" class="fw-bold">Website</label>
+		<InputText @bind-Value="@Company.Website" id="web" class="form-control web mb-2" name="website" type="text" />
+
+
+					////////
+		@if (IsEdit)
+		{
+			@if (Company.Minority)
+			{
+				<label for="minority" class="fw-bold">Diverse Vendor?<span style="color: red;"> *</span></label>
+				<br />
+				<div class="form-check form-check-inline">
+					<input @onchange="() => HandleMinorityChange(false)" class="form-check-input" type="radio" name="minority" value="false" id="no">
+					<label class="form-check-label" for="no">No</label>
+				</div>
+				<div class="form-check form-check-inline">
+					<input checked @onchange="() => HandleMinorityChange(true)" class="form-check-input" type="radio" name="minority" value="true" id="yes">
+					<label for="yes" class="form-check-label">Yes</label>
+				</div>
+				<br />
+			}
+			else
+			{
+				<label for="minority" class="fw-bold">Diverse Vendor?<span style="color: red;"> *</span></label>
+				<br />
+				<div class="form-check form-check-inline">
+					<input checked @onchange="() => HandleMinorityChange(false)" class="form-check-input" type="radio" name="minority" value="false" id="no">
+					<label class="form-check-label" for="no">No</label>
+				</div>
+				<div class="form-check form-check-inline">
+					<input @onchange="() => HandleMinorityChange(true)" class="form-check-input" type="radio" name="minority" value="true" id="yes">
+					<label for="yes" class="form-check-label">Yes</label>
+				</div>
+				<br />
+			}
+		}
+		else
+		{
+			<label for="minority" class="fw-bold">Diverse Vendor?<span style="color: red;"> *</span></label>
+			<br />
+			<div class="form-check form-check-inline">
+				<input checked @onchange="() => HandleMinorityChange(false)" class="form-check-input" type="radio" name="minority" value="false" id="no">
+				<label class="form-check-label" for="no">No</label>
+			</div>
+			<div class="form-check form-check-inline">
+				<input @onchange="() => HandleMinorityChange(true)" class="form-check-input" type="radio" name="minority" value="true" id="yes">
+				<label for="yes" class="form-check-label">Yes</label>
+			</div>
+			<br />
+		}
+
+		<label class="fw-bold mt-2" for="div-cert">Diversity Certification<span style="color: red;"> *</span></label>
+		<InputSelect @bind-Value="@Company.Diversity_Certification" name="diversity-certification" class="form-control div-cert gray mb-2" id="div-cert">
+			<option value="" selected>Choose Diversity Certification...</option>
+			<option value="Not Certified">Not Certified</option>
+			<option value="City of Indianapolis">City of Indianapolis</option>
+			<option value="State of Indiana">State of Indiana</option>
+			<option value="NMSDC">NMSDC</option>
+			<option value="WBENC">WBENC</option>
+			<option value="Veteran's Administration">Veteran's Administration</option>
+			<option class="other" value="Other">Other</option>
+		</InputSelect>
+
+		@if (Company.Diversity_Certification == "Other")
+		{
+			<label for="other-div-cert" class="fw-bold">Describe Diversity Certification<span style="color: red;"> *</span></label>
+			<InputText required @bind-Value="@Company.Other_Diversity_Certification" id="other-div-cert" class="form-control other-div-cert mb-2" type="text" name="other-description-of-diversity-certification" />
+		}
+
+		<label for="company-desc" class="fw-bold">Description of Goods and Services<span style="color: red;"> *</span></label>
+		<InputText @bind-Value="@Company.Description_Goods_Services" class="form-control name description mb-3" name="description-goods-services" id="company-desc" type="text" />
+
+
+		@if (SaveCompanyInfoSuccess is not null)
+		{
+			<div class="alert alert-success">@SaveCompanyInfoSuccess</div>
+		}
+		@if (SaveCompanyInfoError is not null)
+		{
+			<div class="alert alert-danger">@SaveCompanyInfoError</div>
+		}
+
+		@if (IsEdit)
+		{
+			<button type="submit" class="btn btn-success btn-sm mb-3">Save Company Info</button>
+		}
+		else
+		{
+			<button type="submit" class="btn btn-primary mb-2">Next</button>
+		}
+	}
+</EditForm>
+
+@code {
+	[Parameter]
+	public Company? Company { get; set; }
+
+	[Parameter]
+	public List<Company>? Companies { get; set; }
+
+	[Parameter]
+	public List<VendorAccount>? Accounts { get; set; }
+
+	[Parameter]
+	public string? InitialSSN { get; set; }
+
+	[Parameter]
+	public bool IsEdit { get; set; }
+
+	[Parameter]
+	public EventCallback<bool> OnSubmit { get; set; }
+
+	[Parameter]
+	public string? FormattedId { get; set; }
+
+	[Parameter]
+	public string? SaveCompanyInfoSuccess { get; set; }
+
+	[Parameter]
+	public string? SaveCompanyInfoError { get; set; }
+
+	[Parameter]
+	public bool CompanyAdded { get; set; }
+
+	private string? fedId = "";
+
+	protected override async Task OnInitializedAsync()
+	{
+		if (IsEdit && Company is not null && Company.Fed_Id_SSN is not null)
+		{
+			fedId = encryptionService.Decrypt(Company.Fed_Id_SSN);
+		}
+		else if (!IsEdit && CompanyAdded && Company is not null && Company.Fed_Id_SSN is not null)
+		{
+			Company.Fed_Id_SSN = encryptionService.Decrypt(Company.Fed_Id_SSN);
+		}
+	}
+
+	private async Task HandleCompanyComplete()
+	{
+
+		if (OnSubmit.HasDelegate && Company is not null && fedId is not null)
+		{
+			if (!IsEdit)
+			{
+				fedId = Company.Fed_Id_SSN;
+			}
+
+			if (!Regex.IsMatch(fedId, @"^(\d{9})|(^\d{3}-\d{2}-\d{4}$)|(^[1-9]\d?-\d{7})$") || fedId.Count() > 9)
+			{
+				SaveCompanyInfoError = "Invalid SSN or Federal Tax Id: Please follow the accepted formats: XXXXXXXXX (no dashes)";
+				SaveCompanyInfoSuccess = null;
+				return;
+			}
+
+			var existingId = Companies.Where(comp => comp.Id != Company.Id).Any(company => encryptionService.Decrypt(company?.Fed_Id_SSN) == fedId && company.Completed_Registeration);
+
+			if (!IsEdit && existingId)
+			{
+				var company = Companies.Where(comp => comp.Id != Company.Id).FirstOrDefault(comp => encryptionService.Decrypt(comp?.Fed_Id_SSN) == Company.Fed_Id_SSN && comp.Completed_Registeration);
+				var account = Accounts?.FirstOrDefault(account => account.CompanyId == company?.Id);
+
+				if (company is not null && account is not null && company.Is_Deleted)
+				{
+					SaveCompanyInfoError = $"The Fed Id has already been registered for the company '{company.Name}. The account for the company was deleted. Please contact Purchasing at Adelaide Mhlanga at amhlanga@hhcorp.org or 317.221.2038 for more information.";
+					SaveCompanyInfoSuccess = null;
+					return;
+				}
+
+				if (company is not null && account is not null)
+				{
+					SaveCompanyInfoError = $"The Fed Id has already been registered for the company '{company.Name}'. Please contact {account.Email} to be added to the account as an authorized contact. If this employee is no longer with your organization, please contact Purchasing at Adelaide Mhlanga at amhlanga@hhcorp.org or 317.221.2038.";
+					SaveCompanyInfoSuccess = null;
+					return;
+				}
+			}
+			if (IsEdit && existingId && InitialSSN != Company.Fed_Id_SSN)
+			{
+				var company = Companies.Where(comp => comp.Id != Company.Id).FirstOrDefault(comp => encryptionService.Decrypt(comp?.Fed_Id_SSN) == Company.Fed_Id_SSN && comp.Completed_Registeration);
+				var account = Accounts?.FirstOrDefault(account => account.CompanyId == company?.Id);
+
+				if (company is not null && account is not null && company.Is_Deleted)
+				{
+					SaveCompanyInfoError = $"The Fed Id has already been registered for the company '{company.Name}. The account for the company was deleted. Please contact Purchasing at Adelaide Mhlanga at amhlanga@hhcorp.org or 317.221.2038 for more information.";
+					SaveCompanyInfoSuccess = null;
+					return;
+				}
+
+				if (company is not null && account is not null)
+				{
+					SaveCompanyInfoError = $"The Fed Id has already been registered for the company '{company.Name}'. Please contact {account.Email} to be added to the account as an authorized contact. If this employee is no longer with your organization, please contact Purchasing at Adelaide Mhlanga at amhlanga@hhcorp.org or 317.221.2038.";
+					SaveCompanyInfoSuccess = null;
+					return;
+				}
+			}
+			else
+			{
+				if (Company.Diversity_Certification != "Other")
+				{
+					Company.Other_Diversity_Certification = "";
+				}
+
+				Company.Fed_Id_SSN = await encryptionService.Encrypt(fedId);
+
+				if (IsEdit)
+				{
+					Company.EditedSince = DateTime.Now;
+					companyService.DbUpdateCompany(Company);
+				}
+
+				SaveCompanyInfoError = null;
+				SaveCompanyInfoSuccess = "Saved Company Info changes successfully!";
+			}
+			await OnSubmit.InvokeAsync(true);
+		}
+	}
+
+	private void HandleCompanyIncomplete()
+	{
+		SaveCompanyInfoSuccess = null;
+
+		SaveCompanyInfoError = "Can't Save changes. Please fill all fields.";
+	}
+
+	private void HandleIdChange(bool empId)
+	{
+		if (Company is not null)
+		{
+			if (empId)
+			{
+				Company.EmployeeIdNumber = true;
+			}
+			else
+			{
+				Company.EmployeeIdNumber = false;
+			}
+		}
+	}
+
+	private void HandleMinorityChange(bool minority)
+	{
+		if (Company is not null)
+		{
+			if (minority)
+			{
+				Company.Minority = true;
+			}
+			else
+			{
+				Company.Minority = false;
+			}
+		}
+	}
+}

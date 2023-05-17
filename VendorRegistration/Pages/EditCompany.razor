@@ -1,0 +1,673 @@
+﻿@page "/edit/{CompanyId:int}"
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject CompanyService companyService
+@inject AccountService accountService
+@inject CategoryService categoryService
+@inject TypeService typeService
+@inject CompanyTypesAndCatsService ctcService
+@inject AddressService addressService
+@inject AuthorizedContactsService contactsService
+@inject EncryptionService encryptionService
+@inject TypeCatCompanyChangesService changeService
+
+<AuthorizeView Policy="AdminOrSuperUser">
+    <Authorized>
+        <div class="container d-flex flex-column position-relative">
+
+            @if (Company == null)
+            {
+                <div class="mb-3">Loading...</div>
+            }
+            else
+            {
+                <div class="d-flex flex-column">
+                    <a class="btn btn-sm btn-secondary align-self-start" href="/companies"><i class="fa-solid fa-sm fa-chevron-left"></i> Back</a>
+                    <h2 class="title mb-4 align-self-center">Company: <strong>@Company.Name</strong></h2>
+                </div>
+
+                <div class="tab-div mb-2 align-self-center">
+                    <button @onclick="@HandleAccountActive" class="tab1-btn @(AccountActive == true ? "active-page" : "")" type="button">Account</button>
+                    <button @onclick="@HandleInfoActive" class="tab2-btn btn @(InfoActive == true ? "active-page" : "")" type="button">Company Info</button>
+                    <button @onclick="@HandleAddressActive" class="tab3-btn btn @(AddressActive == true ? "active-page" : "")" type="button">Address</button>
+                    <button @onclick="@HandleContactsActive" class="tab4-btn btn @(ContactsActive == true ? "active-page" : "")" type="button">Contacts</button>
+                    <button @onclick="@HandleTypesCatsActive" class="tab5-btn btn @(TypesCatsActive == true ? "active-page" : "")" type="button">Types/Categories</button>
+                </div>
+
+
+                @if (AccountActive)
+                {
+                    @if (Account == null)
+                    {
+                        <div>Loading...</div>
+                    }
+                    else
+                    {
+                        <div class="create-account-container mb-4 shadow">
+                            <h3 class="mb-4">Account</h3>
+                            <AccountForm Company="@Company" OnSubmit="@HandleAccountSubmit" SaveAccountError="@SaveAccountError" Companies="@Companies" Accounts="@Accounts" SaveAccountSuccess="@SaveAccountSuccess" IsEdit="true" Account="@Account" />
+                        </div>
+                    }
+                }
+                @if (InfoActive)
+                {
+                    <div class="create-account-container mb-4 shadow">
+                        <h3 class="mb-4">Company Information</h3>
+                        <CompanyInfoForm Accounts="@Accounts" InitialSSN="@InitialSSN" Companies="@Companies" FormattedId="@FormattedId" SaveCompanyInfoSuccess="@SaveCompanyInfoSuccess" SaveCompanyInfoError="@SaveCompanyInfoError" OnSubmit="@HandleCompanySubmit" IsEdit="true" Company="@Company" />
+                    </div>
+                }
+
+                @if (AddressActive)
+                {
+                    @if (Address == null)
+                    {
+                        <div>Loading...</div>
+                    }
+                    else
+                    {
+                        <div class="create-account-container mb-4 shadow">
+                            <h3 class="mb-4">Address</h3>
+                            <AddressForm SaveAddressSuccess="@SaveAddressSuccess" SaveAddressError="@SaveAddressError" OnSubmit="@HandleAddressSubmit" IsEdit="true" Address="@Address" />
+                        </div>
+                    }
+
+                }
+
+                @if (ContactsActive)
+                {
+                    @if (ContactList is null)
+                    {
+                        <div>Loading...</div>
+                    }
+                    else
+                    {
+                        <div class="container d-flex flex-column align-items-center">
+
+                            <div class="form-wrapper mb-3">
+                                <div class="contacts-group mb-4 shadow">
+
+                                    <h3 class="contacts-title fs-3 fw-bold mb-4">Company Contacts</h3>
+                                    <ContactsForm ContactList="@ContactList" Company="@Company" IsEdit="true" OnSubmit="@HandleContactSubmit"
+                                      ContactError="@ContactError" FirstName="@FirstName" LastName="@LastName" Email="@Email" Number="@Number" />
+                                </div>
+                            </div>
+
+                        </div>
+                    }
+
+                }
+
+                @if (TypesCatsActive)
+                {
+                    <div class="container d-flex flex-column">
+
+                        <div class="types-categories-group mb-4 shadow">
+
+                            <h3 class="prompt fs-3 fw-bold mb-4">Edit/View Types and Categories</h3>
+                            <p class="fw-bold">
+                                Please check all types and categories that relate to the company.
+                                Click save when done.
+                            </p>
+                            <div class="page-layout">
+                                <div class="search-view-type">
+                                    <div class="input-group mb-3">
+                                        <label for="search" hidden>Search Type </label>
+                                        <input type="text" id="search" placeholder=" Search Type... "
+                                       @onkeyup="@FilterKeyUp" @bind-value="@FilterTypeString" class="type-search-input form-control mb-3" />
+                                        <button class="btn btn-sm btn-secondary" type="button" @onclick="ButtonFilterClick">Search</button>
+                                    </div>
+
+                                    <div class="types mt-3">
+                                        <p class="types-title fs-5 fw-bold">Type</p>
+
+                                        <ul class="type-data">
+                                            @if (QueryableTypes is not null)
+                                            {
+                                                @foreach (var type in QueryableTypes)
+                                                {
+                                                    @if (CheckedTypes.Any(check => check.Id == type.Id))
+                                                    {
+                                                        <li style="height: 35px;" class="typeLi mb-1">
+                                                            <label class="d-flex align-items-center" id="key" for="@type.Type_Name">
+                                                                <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @key="@type.Id" checked id="@type.Type_Name" value="@type.Is_Checked" @onchange="(args) => HandleTypeChange(args, type.Id)" class="form-check-input type-check"
+                                                   Name="TypeCheckbox" type="checkbox" /> @type.Type_Name
+                                                            </label>
+                                                            <br />
+                                                        </li>
+                                                    }
+                                                    else
+                                                    {
+                                                        <li style="height: 35px;" class="typeLi mb-1">
+                                                            <label class="d-flex align-items-center" id="key" for="@type.Type_Name">
+                                                                <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @key="@type.Id" id="@type.Type_Name" value="@type.Is_Checked" @onchange="(args) => HandleTypeChange(args, type.Id)" class="form-check-input type-check"
+                                                   Name="TypeCheckbox" type="checkbox" /> @type.Type_Name
+                                                            </label>
+                                                            <br />
+                                                        </li>
+                                                    }
+                                                }
+                                            }
+                                        </ul>
+
+                                    </div>
+                                </div>
+
+                                <div class="view-search-type">
+                                    <div class="input-group mb-3">
+                                        <label for="search-cat" hidden>Search Category</label>
+                                        <input type="text" id="search-cat" placeholder=" Search Category... "
+                                       @onkeyup="@FilterKeyUp" @bind-value="@FilterCategoryString" class="category-search-input form-control mb-3" />
+                                        <button class="btn btn-sm btn-secondary" type="button" @onclick="@ButtonFilterClick">Search</button>
+                                    </div>
+
+                                    <div class="categories mt-3">
+
+                                        <p class="cat-title fs-5 fw-bold">Categories:</p>
+
+                                        <ul class="cat-data">
+                                            @if (QueryableCategories is not null)
+                                            {
+                                                @foreach (var cat in QueryableCategories)
+                                                {
+                                                    @if (Types is not null)
+                                                    {
+                                                        var UniqueType = Types.FirstOrDefault(type => type.Id == cat.Type_Id);
+
+                                                        @if (CheckedCategories.Any(check => check.Id == cat.Id) && UniqueType is not null)
+                                                        {
+                                                            <li style="height: 35px;" class="catLi mb-1">
+                                                                <label class="d-flex align-items-center" id="key" for="@cat.Category_Name">
+                                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @key="@cat.Id" checked value="@cat.Is_Checked" @onchange="(args) => HandleCategoryChange(args, cat.Id)" class="form-check-input cat-check" id="@cat.Category_Name"
+                                                   name="@cat.Category_Name" type="checkbox" /><strong class="mr-1"> @UniqueType.Type_Name:</strong> @cat.Category_Name
+                                                                </label>
+                                                                <br />
+                                                            </li>
+                                                        }
+                                                        else if (!CheckedCategories.Any(check => check.Id == cat.Id) && UniqueType is not null)
+                                                        {
+                                                            <li style="height: 35px;" class="catLi mb-1">
+                                                                <label class="d-flex align-items-center" id="key" for="@cat.Category_Name">
+                                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @key="@cat.Id" value="@cat.Is_Checked" @onchange="(args) => HandleCategoryChange(args, cat.Id)" class="form-check-input cat-check" id="@cat.Category_Name"
+                                                   name="@cat.Category_Name" type="checkbox" /><strong class="mr-1"> @UniqueType.Type_Name:</strong> @cat.Category_Name
+                                                                </label>
+                                                                <br />
+                                                            </li>
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        </ul>
+
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <p class="fw-bold mt-3">Categories Saved: @CurrentCategoryCount</p>
+                        </div>
+
+                        <button type="button" @onclick="() => HandleTypesCatsSubmit()" class="save-btn btn btn-success mb-3">Save Types and Changes</button>
+
+                        @if (SuccessMessage is not null)
+                        {
+                            <div class="alert alert-success">@SuccessMessage</div>
+                        }
+                        @if (ErrorMessage is not null)
+                        {
+                            <div class="alert alert-danger">@ErrorMessage</div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-danger text-center">You are not authorized to view this page.</div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    [Parameter]
+    public int CompanyId { get; set; }
+    private string? UserCompanyId { get; set; }
+    private List<Company>? Companies { get; set; }
+    private List<VendorAccount>? Accounts { get; set; }
+
+    private Company? Company { get; set; }
+    private VendorAccount? Account { get; set; }
+    private Address? Address { get; set; }
+
+    private string? SaveAccountSuccess { get; set; }
+    private string? SaveAccountError { get; set; }
+
+    private string? SaveCompanyInfoSuccess { get; set; }
+    private string? SaveCompanyInfoError { get; set; }
+
+    private string? SaveAddressSuccess { get; set; }
+    private string? SaveAddressError { get; set; }
+
+    private bool AccountActive = true;
+    private bool InfoActive = false;
+    private bool AddressActive = false;
+    private bool ContactsActive = false;
+    private bool TypesCatsActive = false;
+    public List<Authorized_Contacts>? ContactList { get; set; }
+
+    private string FirstName { get; set; } = default!;
+    private string LastName { get; set; } = default!;
+    private string Email { get; set; } = default!;
+    private int? Number { get; set; }
+    private string? ContactError { get; set; } = default!;
+
+    private string? InitialSSN { get; set; }
+
+    public List<Business_Types>? Types { get; set; }
+    public Business_Types[]? QueryableTypes { get; set; }
+    public Business_Types? Type { get; set; }
+    public List<Business_Categories>? QueryableCategories = new List<Business_Categories>();
+    public List<Business_Categories>? Categories { get; set; }
+    public Business_Categories? Category { get; set; }
+    public Company_Types_Categories? CompanyTypeAndCat { get; set; }
+    public List<Company_Types_Categories>? CompanyCategories = new List<Company_Types_Categories>();
+    private List<Company_Types_Categories>? CurrentCompanyCategories { get; set; }
+    private List<Business_Categories> FilteredCategories = new List<Business_Categories>();
+
+    private string? FilterTypeString { get; set; }
+    private string? FilterCategoryString { get; set; }
+
+    private List<Business_Types> CheckedTypes = new List<Business_Types>();
+    private List<Business_Categories> CheckedCategories = new List<Business_Categories>();
+
+    private string? FormattedId { get; set; }
+    private int? CurrentCategoryCount { get; set; }
+    private string? SuccessMessage { get; set; }
+    private string? ErrorMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
+        var claims = userAuth.User.Claims.ToList();
+
+        UserCompanyId = claims?.FirstOrDefault(claim => claim.Type.Equals("Company"))?.Value;
+        var role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+
+        if (role != "Admin" && role != "SuperUser")
+        {
+            if (UserCompanyId != CompanyId.ToString())
+            {
+                NavigationManager.NavigateTo($"/");
+            }
+        }
+
+        Company = companyService.GetCompanyById(CompanyId);
+        Companies = companyService.GetAllCompanies();
+        Accounts = accountService.GetVendorAccounts();
+        Company = companyService.GetCompanyById(CompanyId);
+        Account = accountService.GetAccountByCompanyId(CompanyId);
+        Address = addressService.GetAddressFromCompanyId(CompanyId);
+        Types = typeService.GetTypesNotDeleted();
+        Categories = categoryService.GetCategoriesNotDeleted();
+        CurrentCompanyCategories = ctcService.GetCompanyTypesAndCatsFromCompanyId(CompanyId);
+
+        ContactList = contactsService.GetContactsFromCompanyId(CompanyId);
+        ContactError = null;
+
+        CurrentCategoryCount = CurrentCompanyCategories.Count();
+
+
+        if (Company is not null && Company.Fed_Id_SSN is not null)
+        {
+            FormattedId = encryptionService.Decrypt(Company.Fed_Id_SSN);
+
+            if (Regex.IsMatch(FormattedId, @"^(\d{9})|(^\d{3}-\d{2}-\d{4}$)|(^[1-9]\d?-\d{7})$") && !Company.EmployeeIdNumber)
+            {
+                FormattedId = FormattedId.Insert(5, "-").Insert(3, "-");
+            }
+            else if (Regex.IsMatch(FormattedId, @"^(\d{9})|(^\d{3}-\d{2}-\d{4}$)|(^[1-9]\d?-\d{7})$") && Company.EmployeeIdNumber)
+            {
+                FormattedId = FormattedId.Insert(2, "-");
+            }
+            else
+            {
+                FormattedId = "Tax Id format is incorrect";
+            }
+
+            InitialSSN = encryptionService.Decrypt(Company.Fed_Id_SSN);
+        }
+        IQueryable<Business_Types> TypeQuery = typeService.GetTypesNotDisabledAndNotDeletedQueryable();
+        TypeQuery = AddTypeFilter(TypeQuery);
+        QueryableTypes = await TypeQuery.OrderBy(type => type.Type_Name).ToArrayAsync();
+
+
+        foreach (var comp in CurrentCompanyCategories)
+        {
+
+            foreach (var type in Types.Where(type => type.Id == comp.Type_Id && !type.Is_Deleted))
+            {
+                if (!CheckedTypes.Any(check => check.Id == type.Id))
+                {
+                    CheckedTypes.Add(type);
+                }
+            }
+
+            foreach (var cat in Categories.Where(cat => cat.Id == comp.Category_Id))
+            {
+                if (!CheckedCategories.Any(check => check.Id == cat.Id))
+                {
+                    CheckedCategories.Add(cat);
+                }
+
+                if (!FilteredCategories.Any(check => check.Id == cat.Id))
+                {
+                    FilteredCategories.Add(cat);
+                }
+            }
+
+            foreach (var type in CheckedTypes)
+            {
+                var CategoryList = categoryService.GetCategoriesFromTypeId(type.Id);
+
+                foreach (var category in CategoryList.Where(cat => !cat.Is_Deleted))
+                {
+                    if (!FilteredCategories.Any(filter => filter.Id == category.Id))
+                    {
+                        FilteredCategories.Add(category);   //Renders All Categories for each Type checked
+                    }
+                }
+            }
+
+            foreach (var cat in FilteredCategories)
+            {
+                if (!QueryableCategories.Any(query => query.Id == cat.Id))
+                {
+                    QueryableCategories.Add(cat);
+                }
+            }
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Company = companyService.GetCompanyById(CompanyId);
+
+        if (Company is not null && Company.Fed_Id_SSN is not null)
+        {
+            FormattedId = encryptionService.Decrypt(Company.Fed_Id_SSN);
+
+            if (Regex.IsMatch(FormattedId, @"^(\d{9})|(^\d{3}-\d{2}-\d{4}$)|(^[1-9]\d?-\d{7})$") && !Company.EmployeeIdNumber)
+            {
+                FormattedId = FormattedId.Insert(5, "-").Insert(3, "-");
+            }
+            else if (Regex.IsMatch(FormattedId, @"^(\d{9})|(^\d{3}-\d{2}-\d{4}$)|(^[1-9]\d?-\d{7})$") && Company.EmployeeIdNumber)
+            {
+                FormattedId = FormattedId.Insert(2, "-");
+            }
+            else
+            {
+                FormattedId = "Tax Id format is incorrect";
+            }
+
+            InitialSSN = encryptionService.Decrypt(Company.Fed_Id_SSN);
+        }
+
+        Account = accountService.GetAccountByCompanyId(CompanyId);
+        Address = addressService.GetAddressFromCompanyId(CompanyId);
+        SaveAccountSuccess = null;
+        SaveAccountError = null;
+        SaveCompanyInfoSuccess = null;
+        SaveCompanyInfoError = null;
+        SaveAddressSuccess = null;
+        SaveAddressError = null;
+
+        Company = companyService.GetCompanyById(CompanyId);
+        ContactList = contactsService.GetContactsFromCompanyId(CompanyId);
+        ContactError = null;
+
+        CurrentCompanyCategories = ctcService.GetCompanyTypesAndCatsFromCompanyId(CompanyId);
+        CurrentCategoryCount = CurrentCompanyCategories.Count();
+        Companies = companyService.GetAllCompanies();
+        Accounts = accountService.GetVendorAccounts();
+
+        IQueryable<Business_Types> TypeQuery = typeService.GetTypesNotDisabledAndNotDeletedQueryable();
+        TypeQuery = AddTypeFilter(TypeQuery);
+        QueryableTypes = await TypeQuery.OrderBy(type => type.Type_Name).ToArrayAsync();
+
+
+        if (!string.IsNullOrWhiteSpace(FilterCategoryString) && QueryableCategories is not null)
+        {
+            QueryableCategories.Clear();
+            foreach (var cat in FilteredCategories.Where(cat => cat.Category_Name != null && cat.Category_Name.ToLower().Contains(this.FilterCategoryString.ToLower())))
+            {
+                QueryableCategories.Add(cat);
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(FilterCategoryString) && QueryableCategories is not null)
+        {
+            QueryableCategories.Clear();
+            foreach (var cat in FilteredCategories)
+            {
+                QueryableCategories.Add(cat);
+            }
+        }
+
+        SuccessMessage = null;
+        ErrorMessage = null;
+    }
+
+    private async Task HandleAccountSubmit(bool isValid)
+    {
+        if (isValid)
+        {
+            SaveAccountSuccess = "Saved Account changes successfully!";
+            //LoadData();
+        }
+    }
+
+    private async Task HandleCompanySubmit(bool isValid)
+    {
+        if (isValid)
+        {
+            SaveCompanyInfoSuccess = "Saved Company Info changes successfully!";
+
+            FormattedId = encryptionService.Decrypt(Company.Fed_Id_SSN);
+
+            if (Regex.IsMatch(FormattedId, @"^(\d{9})|(^\d{3}-\d{2}-\d{4}$)|(^[1-9]\d?-\d{7})$") && !Company.EmployeeIdNumber)
+            {
+                FormattedId = FormattedId.Insert(5, "-").Insert(3, "-");
+            }
+            else if (Regex.IsMatch(FormattedId, @"^(\d{9})|(^\d{3}-\d{2}-\d{4}$)|(^[1-9]\d?-\d{7})$") && Company.EmployeeIdNumber)
+            {
+                FormattedId = FormattedId.Insert(2, "-");
+            }
+            else
+            {
+                FormattedId = "Tax Id format is incorrect";
+            }
+
+            InitialSSN = encryptionService.Decrypt(Company.Fed_Id_SSN);
+        }
+        else
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task HandleAddressSubmit(bool isValid)
+    {
+        if (isValid)
+        {
+            if (Address is not null && Company is not null)
+            {
+                try
+                {
+                    Company.EditedSince = DateTime.Now;
+                    companyService.DbUpdateCompany(Company);
+                    addressService.DbUpdateAddress(Address);
+                    SaveAddressSuccess = "Saved Address changes successfully!";
+                }
+                catch
+                {
+                    await LoadData();
+                    SaveAddressError = "There was an error while saving Address changes. Please try again.";
+                }
+            }
+        }
+    }
+
+    private async Task HandleContactSubmit(bool isValid)
+    {
+        if (ContactList is null || !isValid)
+        {
+            await LoadData();
+        }
+        else
+        {
+            await LoadData();
+        }
+    }
+
+    private void HandleAccountActive()
+    {
+        AccountActive = true;
+        InfoActive = false;
+        AddressActive = false;
+        ContactsActive = false;
+        TypesCatsActive = false;
+    }
+
+    private void HandleInfoActive()
+    {
+        AccountActive = false;
+        InfoActive = true;
+        AddressActive = false;
+        ContactsActive = false;
+        TypesCatsActive = false;
+    }
+
+    private void HandleAddressActive()
+    {
+        AccountActive = false;
+        InfoActive = false;
+        AddressActive = true;
+        ContactsActive = false;
+        TypesCatsActive = false;
+    }
+
+    private void HandleContactsActive()
+    {
+        AccountActive = false;
+        InfoActive = false;
+        AddressActive = false;
+        ContactsActive = true;
+        TypesCatsActive = false;
+    }
+
+    private void HandleTypesCatsActive()
+    {
+        AccountActive = false;
+        InfoActive = false;
+        AddressActive = false;
+        ContactsActive = false;
+        TypesCatsActive = true;
+    }
+
+    private async Task HandleTypeChange(ChangeEventArgs args, int TypeId)
+    {
+        if (Types is not null)
+        {
+            changeService.TypeChange(args, TypeId, Types, Type, CheckedTypes);
+            await LoadCategories();
+        }
+    }
+
+    private async Task LoadCategories()
+    {
+        if (Categories is not null)
+        {
+            changeService.CategoryLoad(FilteredCategories, CheckedTypes, Categories);
+            await LoadData();
+        }
+    }
+
+    private void HandleCategoryChange(ChangeEventArgs args, int CatId)
+    {
+        if (Categories is not null)
+        {
+            changeService.CategoryChange(args, CatId, Categories, Category, CheckedCategories);
+        }
+    }
+
+    private async Task HandleTypesCatsSubmit()
+    {
+        if (!CheckedCategories.Any())
+        {
+            SuccessMessage = null;
+            ErrorMessage = "Need at least one category checked to save changes. Please try again. (Select Other if none of the categories apply)";
+            return;
+        }
+
+        foreach (var cat in CheckedCategories)
+        {
+
+            if (CurrentCompanyCategories is not null && CompanyCategories is not null)
+            {
+
+                if (!CompanyCategories.Any(category => category.Category_Id == cat.Id))  //doesn't add already included categories into database
+                {
+                    if (Company is not null)
+                    {
+                        CompanyTypeAndCat = new();
+                        CompanyTypeAndCat.CompanyId = Company.Id;
+                        CompanyTypeAndCat.Category_Id = cat.Id;
+                        CompanyTypeAndCat.Type_Id = cat.Type_Id;
+                        if (CompanyCategories is not null)
+                        {
+                            CompanyCategories.Add(CompanyTypeAndCat); //Add eveything thats checked into database
+                        }
+                    }
+                }
+            }
+        }
+
+        try
+        {
+            if (CompanyCategories is not null && Company is not null)
+            {
+                Company.EditedSince = DateTime.Now;
+                ctcService.DbAddRangeCompanyTypeAndCatEdit(CompanyCategories, Company);
+                CompanyCategories.Clear();
+                LoadData();
+                SuccessMessage = "Saved Type and Category changes successfully!";
+            }
+        }
+        catch
+        {
+            await LoadData();
+            ErrorMessage = "There was an error while saving changes. Please try again.";
+        }
+
+    }
+
+    private async Task FilterKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task ButtonFilterClick()
+    {
+        await LoadData();
+    }
+
+    private IQueryable<Business_Types> AddTypeFilter(IQueryable<Business_Types> TypeQuery)
+    {
+        if (!string.IsNullOrWhiteSpace(FilterTypeString))
+        {
+            return TypeQuery.Where(type => type.Type_Name != null && type.Type_Name.Contains(this.FilterTypeString));
+        }
+        return TypeQuery;
+    }
+}

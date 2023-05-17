@@ -1,0 +1,503 @@
+﻿@page "/types-and-categories-list"
+@inject IJSRuntime JS
+@inject CategoryService categoryService
+@inject TypeService typeService
+
+<AuthorizeView Policy="AdminOrSuperUser">
+    <Authorized>
+
+        <div class="container d-flex flex-column">
+
+            <div class="d-flex flex-column" style="width: 100%;">
+                <a class="btn btn-sm btn-secondary align-self-start" href="/"><i class="fa-solid fa-sm fa-chevron-left"></i> Home</a>
+                <h2 class="mb-4 title align-self-center">Types and Categories List</h2>
+            </div>
+
+            <div class="tab-div">
+                <button @onclick="@TypesListActive" class="tab1-btn send-notifs-content @(ActiveTypes == true ? "active-page" : "")" type="button">Types (@(ActiveTypesList?.Count() > 0 ? ActiveTypesList?.Count() : 0))</button>
+                <button @onclick="@DeactivatedListActive" class="tab2-btn btn prev-notifs-content @(RemovedTypes == true ? "active-page" : "")" type="button">Removed Types (@(RemovedTypesList?.Count() > 0 ? RemovedTypesList?.Count() : 0))</button>
+            </div>
+
+            @if (Types is not null)
+            {
+                    <button type="button" class="fw-bold btn btn-primary btn-sm mb-2 align-self-start" data-bs-toggle="modal" data-bs-target="#add-type">Add Type</button>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card" style="box-shadow: 0px 0px 10px 4px rgb(230, 228, 228);">
+                                <div class="card-body">
+                                @if (ActiveTypes)
+                                {
+                                            <table id="type-table" class="table">
+                                                <thead>
+                                                    <tr class="text-center" style="height: 3rem;">
+                                                        <th>Types</th>
+                                                        <th>Categories</th>
+                                                        <th>Disable Type</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="text-center">
+                                            @if (ActiveTypesList is not null)
+                                            {
+                                                @foreach (var type in ActiveTypesList)
+                                                {
+                                                                    <tr id="row-@type.Id">
+                                                                        <td>
+                                                                            <label for="@type.Id" hidden>@type.Type_Name</label>
+                                                                            <input type="text" class="form-control mb-1" name="@type.Type_Name" @bind-value="@type.Type_Name" id="@type.Id" style="min-width: 8rem;" />
+                                                                        </td>
+                                                                        <td style="max-width: 450px;">@ShowCategories(type.Id)</td>
+                                                                        <td>
+                                                            @if (type.Is_Disabled)
+                                                            {
+                                                                                    <RadzenText hidden TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Disable 1</RadzenText>
+                                                                                    <RadzenSwitch class="rz-switch-checked p-2" Change="() => HandleTypeDeactivate(type)" />
+                                                            }
+                                                            else
+                                                            {
+                                                                                    <RadzenText hidden TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Disable 0</RadzenText>
+                                                                                    <RadzenSwitch class="p-2" Change="() => HandleTypeDeactivate(type)" />
+                                                            }
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="dropdown" id="dropdown">
+                                                                                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                                    Actions
+                                                                                </button>
+                                                                                <ul class="dropdown-menu">
+                                                                                    <li>
+                                                                                        <a href="/category-list/type/@type.Id" class="dropdown-item text-primary">
+                                                                                            <span><i style="color: #0b5ed7;" class="fa-solid fa-briefcase"></i></span> Manage Categories
+                                                                                        </a>
+                                                                                    </li>
+
+                                                                                    <li class="mt-1 mb-1">
+                                                                                        <button @onclick="() => HandleTypeRemove(type.Id)" id="trash" style="height: auto; margin: 5px 0;" class="dropdown-item text-danger fw-bold">
+                                                                                            <span><i style="color: #dc3545;" class="fa-solid fa-trash-can"></i></span> Remove
+                                                                                        </button>
+                                                                                    </li>
+                                                                                </ul>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                }
+                                            }
+                                                </tbody>
+                                            </table>
+                                }
+
+                                @if (RemovedTypes)
+                                {
+                                            <table id="removed-table" class="table">
+                                                <thead>
+                                                    <tr class="text-center" style="height: 3rem;">
+                                                        <th>Types</th>
+                                                        <th>Categories</th>
+                                                        <th>Disable Type</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="text-center">
+                                            @if (RemovedTypesList is not null)
+                                            {
+                                                @foreach (var type in RemovedTypesList)
+                                                {
+                                                                    <tr id="row-@type.Id">
+                                                                        <td>
+                                                                            <label for="@type.Id" hidden>@type.Type_Name</label>
+                                                                            <input type="text" class="form-control mb-1" name="@type.Type_Name" @bind-value="@type.Type_Name" id="@type.Id" style="min-width: 8rem;" />
+                                                                        </td>
+                                                                        <td style="max-width: 450px;">@ShowCategories(type.Id)</td>
+                                                                        <td>
+                                                            @if (type.Is_Disabled)
+                                                            {
+                                                                                    <RadzenText hidden TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Disable 1</RadzenText>
+                                                                                    <RadzenSwitch class="rz-switch-checked p-2" Change="() => HandleTypeDeactivate(type)" />
+                                                            }
+                                                            else
+                                                            {
+                                                                                    <RadzenText hidden TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Disable 0</RadzenText>
+                                                                                    <RadzenSwitch class="p-2" Change="() => HandleTypeDeactivate(type)" />
+                                                            }
+                                                                        </td>
+                                                                        <td>
+                                                                            <div class="dropdown" id="dropdown">
+                                                                                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                                    Actions
+                                                                                </button>
+                                                                                <ul class="dropdown-menu">
+                                                                                    <li>
+                                                                                        <a href="/category-list/type/@type.Id" class="dropdown-item text-primary">
+                                                                                            <span><i style="color: #0b5ed7;" class="fa-solid fa-briefcase"></i></span> Manage Categories
+                                                                                        </a>
+                                                                                    </li>
+
+                                                                                    <li class="mt-1 mb-1">
+                                                                                        <button @onclick="() => HandleTypeEnable(type.Id)" id="enable" style="height: auto; margin: 5px 0;" class="dropdown-item text-success">
+                                                                                            <span><i style="color: #0acf97;" class="fa-solid fa-circle-up"></i></span> Enable Type
+                                                                                        </button>
+                                                                                    </li>
+                                                                                </ul>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                }
+                                            }
+                                                </tbody>
+                                            </table>
+                                }
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <button disabled="@disabled" @onclick="() => HandleTypeSave()" type="button" class="btn btn-success btn-sm fw-bold mt-1 mb-3 align-self-start">Save Changes</button>
+
+
+                @if (SuccessMessage is not null)
+                {
+                            <div class="alert alert-success">@SuccessMessage</div>
+                }
+
+                @if (ErrorMessage is not null)
+                {
+                            <div class="alert alert-danger">@ErrorMessage</div>
+                }
+
+            }
+            else
+            {
+                    <div>Loading...</div>
+            }
+
+            <!-- Modal -->
+            <div class="modal fade" id="add-type" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header justify-content-center">
+                            <h1 class="modal-title" id="staticBackdropLabel">Add a Type:</h1>
+                        </div>
+                        <div class="modal-body">
+                            <EditForm Context="Type" Model="@BType">
+                                <label for="input-type" hidden>Add Type</label>
+                                <InputText style="box-shadow: 0px 0px 1px 1px rgb(230, 228, 228);" @bind-Value="@InputType" id="input-type" type="text" name="input-type" class="form-control mb-3" placeholder=" Add a Type" />
+                            </EditForm>
+
+                            @if (SuccessMessage is not null)
+                            {
+                                    <div class="alert alert-success">@SuccessMessage</div>
+                            }
+
+                            @if (ErrorMessage is not null)
+                            {
+                                    <div class="alert alert-danger">@ErrorMessage</div>
+                            }
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button @onclick="() => HandleTypeAdd()" type="button" class="btn btn-primary">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-danger text-center">You are not authorized to view this page.</div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+
+    private List<Business_Types>? Types { get; set; }
+    private List<Business_Types>? ActiveTypesList { get; set; }
+    private Business_Types? Type { get; set; }
+    private List<Business_Types>? RemovedTypesList = new List<Business_Types>();
+
+    public List<Business_Categories>? CategoryList { get; set; }
+    private string? InputType { get; set; }
+    public Business_Types? BType = new Business_Types();
+
+    private string? SuccessMessage { get; set; }
+    private string? ErrorMessage { get; set; }
+    private bool DataTablePresent { get; set; }
+
+    private bool ActiveTypes = true;
+    private bool RemovedTypes = false;
+    private bool disabled = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadData();
+    }
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if (ActiveTypesList is not null && !DataTablePresent)
+        {
+            DataTablePresent = true;
+            await JS.InvokeAsync<string>("blazorInterop.DataTablesAddTypesOrderByDisabled", "#type-table");
+        }
+    }
+
+    private async Task LoadData()
+    {
+        Types = typeService.GetTypesList();
+        ActiveTypesList = Types.Where(type => !type.Is_Deleted).ToList();
+        RemovedTypesList = Types.Where(type => type.Is_Deleted).ToList();
+        StateHasChanged();
+        SuccessMessage = null;
+        ErrorMessage = null;
+    }
+
+    private async Task HandleTypeSave()
+    {
+        disabled = true;
+        if (Types is not null)
+        {
+            foreach (var type in Types)
+            {
+                var dbType = Types.FirstOrDefault(t => t.Id == type.Id);
+                if (dbType is not null && type.Type_Name != "")
+                {
+                    var duplicate = typeService.FindDuplicateTypeWithId(dbType.Id, dbType.Type_Name);
+
+                    if (duplicate)
+                    {
+                        SuccessMessage = null;
+                        ErrorMessage = "There is an existing Type with the same name, please try again.";
+                        disabled = false;
+                        return;
+                    }
+
+                    try
+                    {
+                        dbType.Type_Name = type.Type_Name;
+                        typeService.DbUpdateType(dbType);
+
+                        SuccessMessage = "Type changes saved successfully!";
+                    }
+                    catch
+                    {
+                        await LoadData();
+                        ErrorMessage = "There was an error while saving Type changes. Please try again.";
+                        return;
+                    }
+                    finally
+                    {
+                        disabled = false;
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task HandleTypeRemove(int TypeId)
+    {
+        if (Types is not null)
+        {
+            var dbType = Types.FirstOrDefault(type => type.Id == TypeId);
+            CategoryList = categoryService.GetCategoriesFromTypeId(TypeId);
+
+            if (dbType is not null && CategoryList is not null)
+            {
+                var isOk = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to remove the type {dbType.Type_Name} and all of it's categories?");
+
+                if (isOk)
+                {
+                    try
+                    {
+
+                        dbType.Is_Deleted = true;
+                        await typeService.DbUpdateTypeAsync(dbType);
+
+                        await JS.InvokeAsync<string>("blazorInterop.DataTablesRemoveRow", $"#row-{TypeId}");
+
+                        await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#type-table");
+
+                        await DataTableChange();
+
+                        foreach (var cat in CategoryList)
+                        {
+                            cat.Is_Deleted = true;
+                            categoryService.DbUpdateCategory(cat);
+                        }
+
+                        SuccessMessage = "Successfully removed Type and all of it's categories!";
+                    }
+                    catch
+                    {
+                        await LoadData();
+                        ErrorMessage = "There was an error while removing the Type and it's categories. Please try again.";
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task HandleTypeAdd()
+    {
+        if (InputType is not null)
+        {
+            var duplicate = typeService.FindDuplicateType(InputType);
+
+            if (duplicate)
+            {
+                SuccessMessage = null;
+                ErrorMessage = "There is an existing Type with the same name, please try again.";
+                return;
+            }
+
+            try
+            {
+                Type = new Business_Types();
+                Type.Type_Name = InputType;
+
+                typeService.DbAddType(Type);
+
+                await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#type-table");
+
+                await DataTableChange();
+
+                await JS.InvokeAsync<string>("blazorInterop.FocusOnInput", "#input-type");
+
+                InputType = null;
+                SuccessMessage = "Added Type successfully!";
+                ErrorMessage = null;
+            }
+            catch
+            {
+                await LoadData();
+                SuccessMessage = null;
+                ErrorMessage = "There was an error while adding the Type. Please try again.";
+            }
+        }
+    }
+
+    private async Task HandleTypeEnable(int TypeId)
+    {
+        if (Types is not null)
+        {
+            var dbType = Types.FirstOrDefault(type => type.Id == TypeId);
+            CategoryList = categoryService.GetCategoriesFromTypeId(TypeId);
+
+            if (dbType is not null && CategoryList is not null)
+            {
+                var isOk = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to enable the type {dbType.Type_Name} and all of it's categories?");
+
+                if (isOk)
+                {
+                    try
+                    {
+                        dbType.Is_Deleted = false;
+                        await typeService.DbUpdateTypeAsync(dbType);
+
+                        await JS.InvokeAsync<string>("blazorInterop.DataTablesRemoveRow", $"#row-{TypeId}");
+
+                        await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#removed-table");
+
+                        await DataTableChange();
+
+                        foreach (var cat in CategoryList)
+                        {
+                            cat.Is_Deleted = false;
+                            categoryService.DbUpdateCategory(cat);
+                        }
+                        SuccessMessage = "Successfully enabled Type and all of it's categories!";
+                    }
+                    catch
+                    {
+                        await LoadData();
+                        ErrorMessage = "There was an error while enabling the Type and it's categories. Please try again.";
+                    }
+                }
+            }
+        }
+    }
+
+    private MarkupString ShowCategories(int Id)
+    {
+        var categories = categoryService.GetCategoriesFromTypeId(Id);
+        List<MarkupString> categoryStringsList = new();
+
+        foreach (var cat in categories)
+        {
+            categoryStringsList.Add(new MarkupString($"{cat.Category_Name}"));
+        }
+
+        if (categoryStringsList.Count() == 0)
+        {
+            return new MarkupString("No Categories");
+        }
+        string stringTypeCat = string.Join("; ", categoryStringsList.ToArray());
+
+        MarkupString markup = new MarkupString($"{stringTypeCat}");
+
+        return markup;
+    }
+
+    public async Task HandleTypeDeactivate(Business_Types type)
+    {
+        type.Is_Disabled = !type.Is_Disabled;
+        typeService.DbUpdateType(type);
+
+        if (RemovedTypes)
+        {
+            await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#removed-table");
+
+            await JS.InvokeAsync<string>("blazorInterop.DataTablesAddTypesOrderByDisabled", "#removed-table");
+
+        }
+        if (ActiveTypes)
+        {
+            await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#type-table");
+
+            await JS.InvokeAsync<string>("blazorInterop.DataTablesAddTypesOrderByDisabled", "#type-table");
+        }
+
+        //await DataTableChange();
+    }
+
+    private async Task TypesListActive()
+    {
+        await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#removed-table");
+
+        ActiveTypes = true;
+        RemovedTypes = false;
+        await DataTableChange();
+    }
+
+    private async Task DeactivatedListActive()
+    {
+        await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#type-table");
+
+        ActiveTypes = false;
+        RemovedTypes = true;
+        await DataTableChange();
+    }
+
+    private async Task DataTableHandling()
+    {
+        if (ActiveTypes)
+        {
+            await JS.InvokeAsync<string>("blazorInterop.DataTablesAddTypesOrderByDisabled", "#type-table");
+
+        }
+        if (RemovedTypes)
+        {
+            await JS.InvokeAsync<string>("blazorInterop.DataTablesAddTypesOrderByDisabled", "#removed-table");
+        }
+    }
+
+    private async Task DataTableChange()
+    {
+        await LoadData();
+        StateHasChanged();
+        await DataTableHandling();
+    }
+
+}

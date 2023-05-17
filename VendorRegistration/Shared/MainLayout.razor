@@ -1,19 +1,105 @@
-﻿@inherits LayoutComponentBase
+﻿@using System.Security.Claims
+@inherits LayoutComponentBase
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject ThemeService _ThemeService
+@inject IJSRuntime _js
+@inject ILogger<MainLayout> _log
 
-<PageTitle>VendorRegistration</PageTitle>
-
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+@if (!NavigationManager.Uri.Contains("/account/login"))
+{
+    <div class="wrapper">
+                <NavMenu />
+           <div class="content-page">
+            <div class="content">
+@*                <AuthorizeView>
+*@                    <HeaderNav />
+@*                </AuthorizeView>
+*@
+                <div class="content px-4">
+                    <ErrorBoundary @ref="errorBoundary">
+                        <ChildContent>
+                            @Body
+                        </ChildContent>
+                        <ErrorContent Context="ex">
+                            <div class="d-flex justify-content-center">
+                                <span class="badge badge-danger p-2">
+                                    <span>
+                                        <i class="fas fa-exclamation-triangle" style="font-size: 20pt"></i>
+                                        <h4>We're sorry, an error has occured. This issue has been logged.</h4><br />
+                                        <p>Error Message: @ex.Message</p>
+                                    </span>
+                                    <br />
+                                    <button class="btn btn-warning btn-sm" @onclick="returnToHome">Ok</button>
+                                </span>
+                            </div>
+                            @{
+                                OnError(ex);
+                            }
+                        </ErrorContent>
+                    </ErrorBoundary>
+                </div>
+            </div>
         </div>
+    </div>
+}
+else
+{
+    @Body
+}
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+@code {
+    [CascadingParameter] protected Task<AuthenticationState> AuthStat { get; set; }
+
+    private ErrorBoundary? errorBoundary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+
+        //var user = (await AuthStat).User;
+
+        var user = ClaimsPrincipal.Current;
+
+        if ((user == null || (user != null && !user.Identity.IsAuthenticated)) && !NavigationManager.Uri.Contains("account/login"))
+        {
+
+            if (!NavigationManager.Uri.Contains("/register") && !NavigationManager.Uri.Contains("/password-reset") && !NavigationManager.Uri.Contains("/account-verification") && !NavigationManager.Uri.Contains("/terms-and-conditions"))
+            {
+                NavigationManager.NavigateTo($"account/login");
+            }
+        }
+
+        //if (string.IsNullOrWhiteSpace(_ThemeService.Theme.Name))
+        //{
+            //var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
+        //    _ThemeService.GetThemeData(userAuth.User.Identity.Name);
+        //}
+    }
+
+    protected override void OnParametersSet()
+    {
+        errorBoundary?.Recover();
+    }
+
+    private void returnToHome()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    public async Task PerformLogout()
+    {
+        try
+        {
+            ((CustomAuthenticationStateProvider)AuthenticationStateProvider).Logout();
+            NavigationManager.NavigateTo("/account/login");
+        }
+        catch (Exception e) { }
+    }
+
+    private async void OnError(Exception ex)
+    {
+        await _js.InvokeAsync<string>("console.error", $"Error Message: {ex.Message}" + Environment.NewLine + $"User: {_ThemeService.Theme.Name}" + Environment.NewLine + $"Stack trace: {ex.StackTrace}");
+        _log.Log(LogLevel.Critical, "Trip Management Application Error" + Environment.NewLine + $"Error Message: {ex.Message}" + Environment.NewLine + $"User: {_ThemeService.Theme.Name}" + Environment.NewLine + $"Stack trace: {ex.StackTrace}");
+    }
+}

@@ -1,0 +1,1101 @@
+﻿@page "/notifications"
+@inject IJSRuntime JS
+@inject StateContainer StateContainer
+@inject CompanyService companyService
+@inject TypeService typeService
+@inject CategoryService categoryService
+@inject CompanyTypesAndCatsService ctcService
+@inject AuthorizedContactsService contactService
+@inject NotificationsHistoryService notifService
+@inject EmailAttachmentsService attachmentsService
+@inject NotificationRecipientsService recipientService
+@inject EmailSenderService emailService
+@inject TypeCatCompanyChangesService changeService
+
+<AuthorizeView Policy="AdminOrSuperUser">
+    <Authorized>
+
+        <div class="container d-flex flex-column align-items-center position-relative">
+
+            <div class="tab-div">
+                <button @onclick="@SendNotifsActive" class="tab1-btn send-notifs-content @(SendNotifs == true ? "active-page" : "")" type="button">Send Notification</button>
+                <button disabled="@IsLoading" @onclick="@PrevNotifsActive" class="tab2-btn btn prev-notifs-content @(PrevNotifs == true ? "active-page" : "")" type="button">Notifications Log</button>
+            </div>
+
+            @if (SendNotifs)
+            {
+                <a class="btn btn-sm btn-secondary home-btn align-self-start" href="/"><i class="fa-solid fa-sm fa-chevron-left"></i> Home</a>
+                <h2 class="title send-notif-title notif-title align-self-center mb-5">Send Notification</h2>
+                <div class="tabs-content-wrapper mb-4">
+                    <div class="tabs-content card shadow mt-1">
+
+                        <div class="notifications-group mt-4">
+
+                            <form action="#" id="notif-form">
+
+                                <div style="background-color: #eff4f8;" class="tab rounded">
+                                    <button type="button" @onclick="(e => DisplayTab(1))" class="@((tab1) ? "active" : "")">
+                                        <span alt="briefcase" class="fa-solid fa-briefcase"></span><br />
+                                        <span class="d-none d-sm-inline">Types</span>
+                                    </button>
+
+                                    <button type="button" @onclick="(e => DisplayTab(2))" class="@((tab2) ? "active" : "")">
+                                        <span alt="building icon" class="fa-solid fa-paperclip"></span><br />
+                                        <span class="d-none d-sm-inline">Categories</span>
+                                    </button>
+
+                                    <button type="button" @onclick="(e => DisplayTab(3))" class="@((tab3) ? "active" : "")">
+                                        <span alt="address-book icon" class="fa-solid fa-building"></span><br />
+                                        <span class="d-none d-sm-inline">Companies</span>
+                                    </button>
+
+                                </div>
+
+
+                                @if (tab1)
+                                {
+                                    <div class="tabcontent mb-4">
+                                        <div class="create-account-container mb-4">
+
+                                            <h4 class="fw-bold">Select Types:</h4>
+                                            <p class="send fw-bold mb-3">Which company types should the notification be sent too?</p>
+
+
+                                            <div class="input-group mb-2">
+                                                <label for="search" hidden>Search Type </label>
+                                                <input type="text" id="search" placeholder=" Search Type... "
+                                               @onkeyup="@FilterKeyUp" @bind-value="@FilterTypeString" class="type-search-input form-control" />
+                                                <button class="btn btn-sm btn-secondary" type="button" @onclick="ButtonFilterClick">Search</button>
+                                            </div>
+
+                                            @if (TypeAll)
+                                            {
+                                                <label class="pt-1 pr-2" for="select-all-type">
+                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 15px !important" checked @onclick="() => HandleTypeAll()" type="checkbox" class="select-all-type form-check-input" id="select-all-type" />
+                                                    Select All
+                                                </label>
+                                            }
+                                            else
+                                            {
+                                                <label class="pt-1 pr-2" for="select-all-type">
+                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 15px !important" @onclick="() => HandleTypeAll()" type="checkbox" class="select-all-type form-check-input" id="select-all-type" />
+                                                    Select All
+                                                </label>
+                                            }
+
+                                            <ul class="border company-types mb-4">
+
+                                                @if (QueryableTypes is not null)
+                                                {
+                                                    @foreach (var type in QueryableTypes)
+                                                    {
+                                                        @if (CheckedTypes.Any(check => check.Id == type.Id))
+                                                        {
+                                                            <li class="typeLi mb-1">
+                                                                <label id="key" for="@type.Type_Name">
+                                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @key="@type.Id" checked id="@type.Type_Name" value="@type.Is_Checked" @onchange="(args) => HandleTypeChange(args, type.Id)" class="form-check-input type-check"
+                                                       Name="TypeCheckbox" type="checkbox" /> @type.Type_Name
+                                                                </label>
+                                                                <br />
+                                                            </li>
+                                                        }
+                                                        else
+                                                        {
+                                                            <li class="typeLi mb-1">
+                                                                <label id="key" for="@type.Type_Name">
+                                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @key="@type.Id" id="@type.Type_Name" value="@type.Is_Checked" @onchange="(args) => HandleTypeChange(args, type.Id)" class="form-check-input type-check"
+                                                       Name="TypeCheckbox" type="checkbox" /> @type.Type_Name
+                                                                </label>
+                                                                <br />
+                                                            </li>
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <li>Loading...</li>
+                                                }
+                                            </ul>
+                                        </div>
+                                        <button type="button" class="btn btn-primary btn-sm" @onclick="() => NextButtonClick(1)">Next</button>
+
+                                    </div>
+                                }
+                                @if (tab2)
+                                {
+                                    <div class="tabcontent mb-4">
+                                        <div class="create-account-container mb-4">
+
+                                            <h4 class="fw-bold">Select Categories:</h4>
+                                            <p class="send fw-bold mb-3">Which company categories should the notification be sent too?</p>
+
+
+                                            <div class="input-group mb-2">
+                                                <label for="search-cat" hidden>Search Category</label>
+                                                <input type="text" id="search-cat" placeholder=" Search Category... "
+                                               @onkeyup="@FilterKeyUp" @bind-value="@FilterCategoryString" class="category-search-input form-control" />
+                                                <button class="btn btn-sm btn-secondary" type="button" @onclick="@ButtonFilterClick">Search</button>
+                                            </div>
+
+                                            @if (CategoryAll)
+                                            {
+                                                <label class="pt-1 pr-2" for="select-all-category">
+                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 15px !important" @onclick="() => HandleCategoryAll()" checked type="checkbox" class="form-check-input" id="select-all-category" />
+                                                    Select All
+                                                </label>
+                                            }
+                                            else
+                                            {
+                                                <label class="pt-1 pr-2" for="select-all-category">
+                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 15px !important" @onclick="() => HandleCategoryAll()" type="checkbox" class="form-check-input" id="select-all-category" />
+                                                    Select All
+                                                </label>
+                                            }
+
+                                            <ul class="border company-categories mb-4">
+
+                                                @if (QueryableCategories is not null && !IsBusy)
+                                                {
+
+                                                    @foreach (var cat in QueryableCategories)
+                                                    {
+                                                        @if (Types is not null)
+                                                        {
+                                                            var UniqueType = Types.FirstOrDefault(type => type.Id == cat.Type_Id);
+
+                                                            @if (CheckedCategories.Any(check => check.Id == cat.Id) && UniqueType is not null)
+                                                            {
+                                                                <li class="catLi mb-1">
+                                                                    <label id="key" for="@cat.Category_Name">
+                                                                        <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @key="@cat.Id" checked value="@cat.Is_Checked" @onchange="(args) => HandleCategoryChange(args, cat.Id)" class="form-check-input cat-check" id="@cat.Category_Name"
+                                                       name="@cat.Category_Name" type="checkbox" /><strong class="ml-1"> @UniqueType.Type_Name:</strong> @cat.Category_Name
+                                                                    </label>
+                                                                    <br />
+                                                                </li>
+                                                            }
+                                                            else if (!CheckedCategories.Any(check => check.Id == cat.Id) && UniqueType is not null)
+                                                            {
+                                                                <li class="catLi mb-1">
+                                                                    <label id="key" for="@cat.Category_Name">
+                                                                        <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @key="@cat.Id" value="@cat.Is_Checked" @onchange="(args) => HandleCategoryChange(args, cat.Id)" class="form-check-input cat-check" id="@cat.Category_Name"
+                                                       name="@cat.Category_Name" type="checkbox" /><strong class="ml-1"> @UniqueType.Type_Name:</strong> @cat.Category_Name
+                                                                    </label>
+                                                                    <br />
+                                                                </li>
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                else if (FilteredCategories is null || IsBusy)
+                                                {
+                                                    <li>Loading...</li>
+                                                }
+                                            </ul>
+
+                                        </div>
+                                        <button type="button" class="btn btn-primary btn-sm" @onclick="() => PreviousButtonClick(2)">Previous</button>
+                                        <button type="button" class="btn btn-primary btn-sm" @onclick="() => NextButtonClick(2)">Next</button>
+
+                                    </div>
+                                }
+                                @if (tab3)
+                                {
+
+                                    <div class="tabcontent mb-4">
+                                        <div class="create-account-container mb-4">
+
+                                            <h4 class="fw-bold">Select Companies:</h4>
+                                            <p class="send fw-bold mb-3">Which companies should the notification be sent too?</p>
+
+
+                                            <div class="input-group mb-2">
+                                                <label for="search-cat" hidden>Search Company</label>
+                                                <input type="text" id="search-cat" placeholder=" Search Company... "
+                                               @onkeyup="@FilterKeyUp" @bind-value="@FilterCompanyString" class="category-search-input form-control" />
+                                                <button class="btn btn-sm btn-secondary" type="button" @onclick="@ButtonFilterClick">Search</button>
+                                            </div>
+
+                                            @if (CompanyAll)
+                                            {
+                                                <label class="pt-1 pr-2" for="select-all-company">
+                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important;margin-left: 15px !important" @onclick="() => HandleCompanyAll()" checked type="checkbox" class="select-all-company form-check-input" id="select-all-company" />
+                                                    Select All
+                                                </label>
+                                            }
+                                            else
+                                            {
+                                                <label class="pt-1 pr-2" for="select-all-company">
+                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 15px !important" @onclick="() => HandleCompanyAll()" type="checkbox" class="select-all-company form-check-input" id="select-all-company" />
+                                                    Select All
+                                                </label>
+                                            }
+
+                                            <ul class="border company-send-list mb-4">
+
+                                                @if (QueryableCompanies is not null && Companies is not null)
+                                                {
+                                                    @foreach (var rcompany in QueryableCompanies)
+                                                    {
+                                                        var company = Companies.Where(comp => !comp.Is_Deleted && !comp.Disabled_From_Notifications).FirstOrDefault(comp => comp.Id == rcompany.CompanyId);
+
+                                                        if (company is not null)
+                                                        {
+                                                            if (SelectedCompanies.Any(sel => sel.Id == rcompany.CompanyId))
+                                                            {
+                                                                <li class=" mb-1">
+                                                                    <label for="company-checkbox">
+                                                                        <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onchange="(args) => HandleCompanyChange(args, company.Id)" @key="company.Id" checked type="checkbox" class="form-check-input" id="company-checkbox" />
+                                                                        @company.Name
+                                                                    </label>
+                                                                </li>
+                                                            }
+                                                            else
+                                                            {
+
+
+                                                                <li class=" mb-1">
+                                                                    <label for="company-checkbox">
+                                                                        <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onchange="(args) => HandleCompanyChange(args, company.Id)" @key="company.Id" type="checkbox" class="form-check-input" id="company-checkbox" />
+                                                                        @company.Name
+                                                                    </label>
+                                                                </li>
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                else if (RelatedCompanies is null || Companies is null || IsBusy)
+                                                {
+                                                    <li>Loading...</li>
+                                                }
+                                            </ul>
+
+                                        </div>
+                                        <button type="button" class="btn btn-primary btn-sm" @onclick="() => PreviousButtonClick(3)">Previous</button>
+
+
+                                    </div>
+                                }
+
+                                <p class="fw-bold">Selected Companies: @(SelectedCompanies.Count() > 0 ? SelectedCompaniesCount : 0)</p>
+
+                                <label for="subject-line" hidden>Subject Line</label>
+                                <input @bind-value="SubjectLine" class="required form-control mb-2" id="subject-line" name="subject-line" type="text" placeholder="Subject Line" />
+
+                                <div style="padding-bottom: 10px;" class="quill-div mb-2">
+                                    <BlazoredTextEditor @ref="@Quill">
+                                        <ToolbarContent>
+                                            <select class="ql-font">
+                                                <option selected=""></option>
+                                                <option value="serif"></option>
+                                                <option value="monospace"></option>
+                                            </select>
+                                            <select class="ql-header">
+                                                <option selected=""></option>
+                                                <option value="1"></option>
+                                                <option value="2"></option>
+                                                <option value="3"></option>
+                                                <option value="4"></option>
+                                                <option value="5"></option>
+                                            </select>
+                                            <select class="ql-align">
+                                                <option selected=""></option>
+                                                <option value="center"></option>
+                                                <option value="right"></option>
+                                            </select>
+                                            <span class="ql-formats">
+                                                <button class="ql-bold"></button>
+                                                <button class="ql-italic"></button>
+                                                <button class="ql-underline"></button>
+                                                <button class="ql-strike"></button>
+                                            </span>
+                                            <span class="ql-formats">
+                                                <select class="ql-color"></select>
+                                                <select class="ql-background"></select>
+                                            </span>
+                                            <span class="ql-formats">
+                                                <button class="ql-list" value="ordered"></button>
+                                                <button class="ql-list" value="bullet"></button>
+                                            </span>
+
+
+                                            <span class="ql-formats">
+                                                <button class="ql-link"></button>
+                                            </span>
+                                        </ToolbarContent>
+                                        <EditorContent>
+                                            <p>@EmailToPerson</p>
+                                            <br />
+                                            <br />
+                                            <p>Thank you,</p>
+                                            <p>Purchasing Administrator</p>
+                                            <p>HHC/MCPHD</p>
+                                            <p>quotes@hhcorp.org</p>
+                                            <br />
+                                        </EditorContent>
+                                    </BlazoredTextEditor>
+
+
+                                    <InputFile style="padding: 15px;" OnChange="e => LoadFiles(e)" multiple></InputFile>
+
+                                    @foreach (var file in uploadedFiles)
+                                    {
+                                        <div style="border: solid black 1px; padding: 5px; margin: 5px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                                            @if (file.UploadedPercentage == 100)
+                                            {
+                                                <button @onclick="() => ViewFileContents(file.FileName)" style="width: 25%; color: blue; text-decoration: underline;" type="button" class="btn btn-sm btn-light">@file.FileName</button>
+                                            }
+                                            else
+                                            {
+                                                @file.FileName
+                                            }
+                                            <progress value="@file.UploadedBytes" max="@file.Size"></progress>
+                                            @file.UploadedPercentage.ToString("F1")%
+                                            (@FormatBytes(file.UploadedBytes) / @FormatBytes(file.Size))
+                                            <button @onclick="() => RemoveFile(file)" type="button" class="btn btn-sm btn-light"><span><i style="color: gray;" class="fa-solid fa-trash"></i></span></button>
+                                        </div>
+                                    }
+                                </div>
+
+                                <button type="button" disabled="@IsBusy" @onclick="@HandleNotifSubmit" class="btn btn-primary submit">Send Notification</button>
+                                @if (IsBusyMessage is not null)
+                                {
+                                    <div class="alert alert-secondary mt-2">@IsBusyMessage</div>
+                                }
+                                @if (SendNotifSuccess is not null)
+                                {
+                                    <div class="alert alert-success mt-4">@SendNotifSuccess</div>
+                                }
+                                @if (SendNotifError is not null)
+                                {
+                                    <div class="alert alert-danger mt-4">@SendNotifError</div>
+                                }
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (PrevNotifs)
+            {
+                <a class="btn btn-sm btn-secondary home-btn align-self-start" href="/"><i class="fa-solid fa-sm fa-chevron-left"></i> Home</a>
+                <h2 class="title prev-notif-title notif-title align-self-center mb-5">Notifications Log</h2>
+
+                <div class="table-wrapper d-flex justify-content-center mb-4">
+                    <div style="min-width: 39rem;" class="previous-notifs-group shadow pt-2 mt-1">
+                        <table class="table mt-3 table-striped" id="basic-datatable">
+                            <thead>
+                                <tr class="header-row">
+                                    <th>Subject:</th>
+                                    <th>Contents:</th>
+                                    <th>Attachments:</th>
+                                    <th>Recipients:</th>
+                                    <th>Date <br> Sent:</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (NotifsHistory is not null)
+                                {
+                                    @foreach (var notifs in NotifsHistory.OrderByDescending(notif => notif.Date_Sent))
+                                    {
+                                        <tr>
+                                            <td style="max-width: 3rem !important; overflow-wrap: break-word !important; ">@notifs.Title</td>
+                                            <td>
+                                                <button style="color: rgb(80, 80, 250); text-decoration: underline" type="button" class="btn" data-bs-toggle="modal" data-bs-target="#emailContents" @onclick="() => ModalShowEmailContents(notifs.Id)">
+                                                    @if (notifs.Body is not null)
+                                                    {
+                                                        @((MarkupString)notifs.Body.Substring(0, 15))
+                                                    }
+                                                </button>
+                                            </td>
+                                            @if (AttachmentsList is not null)
+                                            {
+                                                var attachmentList = AttachmentsList.Where(attachment => attachment.Notifications_Id == notifs.Id);
+
+                                                @if (attachmentList.Count() == 0)
+                                                {
+                                                    <td><p class="font-italic">No<br />Attachments</p></td>
+                                                }
+                                                else
+                                                {
+                                                    <td><button data-bs-toggle="modal" data-bs-target="#attachmentHistory" @onclick="() => ModalShowEmailAttachments(notifs.Id)" class="btn btn-secondary btn-sm"><i style="color: white;" class="fa-solid fa-paperclip"></i></button></td>
+                                                }
+                                            }
+                                            <td>
+                                                <button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#emailRecipients" @onclick="() => ModalShowEmailRecipients(notifs.Id)"><i style="color: white;" class="fa-solid fa-address-book"></i></button>
+                                            </td>
+                                            <td>@notifs.Date_Sent</td>
+                                        </tr>
+
+                                    }
+                                }
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+
+            }
+            @*     Modal Start
+            *@        <div class="modal fade" id="emailContents" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+                    <div class="modal-content">
+                        <div style="flex-direction: column !important; align-items: center;" class="modal-header">
+                            <h4 class="modal-title justify-content-center">Notification Id: <strong>@NotificationId</strong></h4>
+                            <h5 class="justify-content-center">Subject: <strong>@NotificationSubjectLine</strong></h5>
+                        </div>
+                        <div class="modal-body">
+
+                            @if (!IsLoading)
+                            {
+                                @if (NotificationBody is not null)
+                                {
+                                    <p>
+                                        @(
+                                            (MarkupString)NotificationBody
+                                            )
+                                    </p>
+                                }
+                            }
+                            else
+                            {
+                                <div style="font-size: 1.37rem;">Loading...</div>
+                            }
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @*                //Modal End
+            *@
+            @*                //Modal Start
+            *@        <div class="modal fade" id="emailRecipients" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+                    <div class="modal-content">
+                        <div style="flex-direction: column !important; align-items: center;" class="modal-header">
+                            <h4 class="modal-title" style="font-size: 1.37rem;">Recipients: </h4>
+
+                        </div>
+                        <div class="modal-body">
+
+                            <table class="table table-striped border">
+                                <thead class="text-center">
+                                    <tr>
+                                        <th>Company: </th>
+                                        <th>Email Recipients:</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (ListOfCompanies is not null)
+                                    {
+                                        @foreach (var comp in ListOfCompanies)
+                                        {
+                                            <tr>
+                                                <td class="border-right">@comp.Name</td>
+                                                <td>@ShowRecipientsString(comp)</td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @*        //Modal End
+            *@
+
+            @*                //Modal Start
+            *@        <div class="modal fade" id="attachmentHistory" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+                    <div class="modal-content">
+                        <div style="flex-direction: column !important; align-items: center;" class="modal-header">
+                            <h4 class="modal-title" style="font-size: 1.37rem;">Attachments: </h4>
+
+                        </div>
+                        <div class="modal-body d-flex flex-column align-items-center">
+
+                            @if (!IsLoading)
+                            {
+                                @if (AttachmentHistory.Count() > 0)
+                                {
+                                    @foreach (var attachment in AttachmentHistory)
+                                    {
+                                        @if (attachment.File_Name is not null && attachment.Base_64_String is not null && attachment.Content_Type is not null)
+                                        {
+                                            <button @onclick="() => ViewAttachmentHistoryContents(attachment.File_Name, attachment.Base_64_String, attachment.Content_Type)"
+                                    style="width: 40%; padding: 20px; color: blue; text-decoration: underline;" type="button" class="btn btn-sm btn-light">
+                                                @attachment.File_Name
+                                            </button>
+                                            <br />
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                <div style="font-size: 1.37rem;">Loading...</div>
+                            }
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @*        //Modal End
+            *@
+
+        </div>
+
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-danger text-center">You are not authorized to view this page.</div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private bool tab1 = true;
+    private bool tab2 = false;
+    private bool tab3 = false;
+    private bool SendNotifs = true;
+    private bool PrevNotifs = false;
+
+    private List<Business_Types>? Types { get; set; }
+    public Business_Types? Type { get; set; }
+    private List<Business_Types> CheckedTypes = new List<Business_Types>();
+    private List<Business_Categories>? Categories { get; set; }
+    private Business_Categories? Category { get; set; }
+    private List<Business_Categories> CheckedCategories = new List<Business_Categories>();
+    private List<Business_Categories> FilteredCategories = new List<Business_Categories>();
+    public List<Company_Types_Categories> RelatedCompanies = new List<Company_Types_Categories>();
+    private List<Company_Types_Categories>? CompanyTypesCats { get; set; }
+    private List<Company>? Companies { get; set; }
+    private Company? Company { get; set; }
+    private List<Company> SelectedCompanies = new List<Company>();
+    private List<VendorRegistration.Data.Models.Notifications>? NotifsHistory { get; set; }
+    private List<Notification_Recipient>? NotifsRec { get; set; }
+    private Notification_Recipient? RecipientObject { get; set; }
+    private double companyId { get; set; }
+    private List<Authorized_Contacts>? Contacts { get; set; }
+
+    BlazoredTextEditor? Quill;
+    public string? QuillContent { get; set; }
+    private string? SendNotifSuccess { get; set; }
+    private string? SendNotifError { get; set; }
+    private string? IsBusyMessage { get; set; }
+    private bool IsBusy = false;
+    private bool IsLoading { get; set; }
+    private bool TypeAll = false;
+    private bool CategoryAll = false;
+    private bool CompanyAll = false;
+    private int? SelectedCompaniesCount { get; set; }
+    private string? SubjectLine = "";
+    private VendorRegistration.Data.Models.Notifications? Notif { get; set; }
+    private Email_Attachments? Db_EmailAttach { get; set; }
+    private int? NotificationId { get; set; }
+    private string? NotificationSubjectLine { get; set; }
+    private MarkupString? NotificationBody { get; set; }
+    private List<Company> ListOfCompanies = new List<Company>();
+    private MarkupString myMarkup { get; set; }
+    private string? EmailToPerson { get; set; }
+    private string? TemplateEmail { get; set; }
+
+    List<FileUploadProgress> uploadedFiles = new();
+    List<UploadedFile> FileList = new List<UploadedFile>();
+    List<Email_Attachments> AttachmentHistory = new List<Email_Attachments>();
+    private List<Email_Attachments>? AttachmentsList { get; set; }
+    [Inject] public IBlazorDownloadFileService? BlazorDownloadFileService { get; set; }
+
+    MailMessage message = new MailMessage();
+
+    private string? FilterTypeString { get; set; }
+    private string? FilterCategoryString { get; set; }
+    private string? FilterCompanyString { get; set; }
+    public Business_Types[]? QueryableTypes { get; set; }
+    public List<Business_Categories>? QueryableCategories = new List<Business_Categories>();
+    public List<Company_Types_Categories>? QueryableCompanies = new List<Company_Types_Categories>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsLoading = true;
+        Types = typeService.GetTypesNotDeleted();
+        Categories = categoryService.GetCategoriesNotDeleted();
+        CompanyTypesCats = ctcService.GetAllCompanyTypesAndCats();
+        Companies = companyService.GetVerifiedCompanies();
+        Contacts = contactService.GetAuthorizedContactsList();
+        AttachmentsList = attachmentsService.GetAllEmailAttachments();
+        NotifsHistory = notifService.GetNotificationsHistory();
+        NotifsRec = recipientService.GetAllNotificationRecipients();
+
+        IQueryable<Business_Types> TypeQuery = typeService.GetTypesNotDeletedQueryable();  /*Filter Types*/
+        TypeQuery = AddTypeFilter(TypeQuery);
+        QueryableTypes = TypeQuery.OrderBy(type => type.Type_Name).ToArray();
+        IsLoading = false;
+    }
+
+    private async Task LoadData()
+    {
+        IQueryable<Business_Types> TypeQuery = typeService.GetTypesNotDeletedQueryable();  /*Filter Types*/
+        TypeQuery = AddTypeFilter(TypeQuery);
+        QueryableTypes = await TypeQuery.OrderBy(type => type.Type_Name).ToArrayAsync();
+
+        if (!string.IsNullOrWhiteSpace(FilterCategoryString) && QueryableCategories is not null)    /*Filter Categories*/
+        {
+            QueryableCategories.Clear();
+            foreach (var cat in FilteredCategories.Where(cat => cat.Category_Name != null && cat.Category_Name.ToLower().Contains(this.FilterCategoryString.ToLower())))
+            {
+                QueryableCategories.Add(cat);
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(FilterCategoryString) && QueryableCategories is not null)
+        {
+            QueryableCategories.Clear();
+            foreach (var cat in FilteredCategories)
+            {
+                QueryableCategories.Add(cat);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(FilterCompanyString) && QueryableCompanies is not null)    /*Filter Companies*/
+        {
+            QueryableCompanies.Clear();
+            foreach (var comp in RelatedCompanies)
+            {
+                if (Companies is not null)
+                {
+                    var company = Companies.Where(comp => !comp.Is_Deleted && !comp.Disabled_From_Notifications).FirstOrDefault(company => company.Id == comp.CompanyId);
+
+                    if (company is not null && company.Name.ToLower().Contains(this.FilterCompanyString.ToLower()))
+                    {
+                        QueryableCompanies.Add(comp);
+                    }
+                }
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(FilterCompanyString) && QueryableCompanies is not null)
+        {
+            QueryableCompanies.Clear();
+            foreach (var comp in RelatedCompanies)
+            {
+                QueryableCompanies.Add(comp);
+            }
+        }
+
+        SendNotifSuccess = null;
+        SendNotifError = null;
+        NotifsHistory = notifService.GetNotificationsHistory();
+        NotifsRec = recipientService.GetAllNotificationRecipients();
+        AttachmentsList = attachmentsService.GetAllEmailAttachments();
+        IsLoading = false;
+    }
+
+    public void DisplayTab(int TabNumber)
+    {
+        switch (TabNumber)
+        {
+            case 1:
+                this.tab1 = true;
+                this.tab2 = false;
+                this.tab3 = false;
+
+                break;
+            case 2:
+                this.tab1 = false;
+                this.tab2 = true;
+                this.tab3 = false;
+
+                break;
+            case 3:
+                this.tab1 = false;
+                this.tab2 = false;
+                this.tab3 = true;
+
+                break;
+            case 4:
+                this.tab1 = false;
+                this.tab2 = false;
+                this.tab3 = false;
+
+                break;
+        }
+    }
+
+    private void NextButtonClick(int tab)
+    {
+        DisplayTab(tab + 1);
+    }
+
+    private void PreviousButtonClick(int tab)
+    {
+        DisplayTab(tab - 1);
+    }
+
+    private async Task SendNotifsActive()
+    {
+        SendNotifs = true;
+        PrevNotifs = false;
+        await JS.InvokeAsync<string>("blazorInterop.DataTablesRemove", "#basic-datatable");
+
+        await LoadData();
+    }
+
+    private async Task PrevNotifsActive()
+    {
+        SendNotifs = false;
+        PrevNotifs = true;
+        await LoadData();
+        await JS.InvokeAsync<string>("blazorInterop.DataTablesAddOrderbyDate", "#basic-datatable");
+    }
+
+    private void HandleTypeChange(ChangeEventArgs args, int TypeId)
+    {
+        if (Types is not null)
+        {
+            changeService.NotificationTypeChange(args, TypeId, Types, Type, CheckedTypes, TypeAll);
+            LoadCategories();
+        }
+    }
+
+    private async Task LoadCategories()
+    {
+        changeService.CategoryLoad(FilteredCategories, CheckedTypes, Categories);
+        await LoadData();
+    }
+
+    private async Task HandleCategoryChange(ChangeEventArgs args, int CatId)
+    {
+        if (Categories is not null && Companies is not null && CompanyTypesCats is not null)
+        {
+            changeService.NotificationCategoryChange(args, CatId, Categories, Category, CheckedCategories, CompanyTypesCats, Companies, RelatedCompanies, CategoryAll);
+            await LoadData();
+        }
+    }
+
+    private void HandleCompanyChange(ChangeEventArgs args, int CompanyId)
+    {
+        if (Companies is not null)
+        {
+            changeService.NotificationCompanyChange(args, CompanyId, Companies, Company, SelectedCompanies, CompanyAll);
+            SelectedCompaniesCount = SelectedCompanies.Count();
+            StateHasChanged();
+        }
+    }
+
+    private void HandleTypeAll()
+    {
+        if (QueryableTypes is not null)
+        {
+            TypeAll = !TypeAll;
+            changeService.TypeAllHandle(TypeAll, QueryableTypes, CheckedTypes);
+            LoadCategories();
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleCategoryAll()
+    {
+        if (QueryableCategories is not null && CompanyTypesCats is not null && Companies is not null)
+        {
+            CategoryAll = !CategoryAll;
+            changeService.CategoryAllHandle(CategoryAll, QueryableCategories, CheckedCategories, CompanyTypesCats, Companies, RelatedCompanies);
+            StateHasChanged();
+            await LoadData();
+        }
+    }
+
+    private void HandleCompanyAll()
+    {
+        if (QueryableCompanies is not null && Companies is not null)
+        {
+            CompanyAll = !CompanyAll;
+            changeService.CompanyAllHandle(CompanyAll, QueryableCompanies, SelectedCompanies, Companies);
+            SelectedCompaniesCount = SelectedCompanies.Count();
+            StateHasChanged();
+        }
+    }
+
+
+    private void ModalShowEmailContents(int NotifId)
+    {
+        IsLoading = true;
+
+        Notif = notifService.GetNotificationById(NotifId);
+        if (Notif is not null)
+        {
+            myMarkup = new MarkupString($"{Notif.Body}");
+
+            NotificationId = Notif.Id;
+            NotificationSubjectLine = Notif.Title;
+            NotificationBody = myMarkup;
+        }
+        IsLoading = false;
+    }
+
+    private async Task ModalShowEmailRecipients(int NotifId)
+    {
+        IsLoading = true;
+
+        ListOfCompanies.Clear();
+
+        var Notification = recipientService.GetNotificationsFromNotifId(NotifId);
+
+        if (Notification is not null)
+        {
+            //NotificationId = NotifId;
+            foreach (var comp in Notification)
+            {
+                if (comp is not null && Companies is not null)
+                {
+                    var company = Companies.FirstOrDefault(c => c.Id == comp.CompanyId);
+                    if (!ListOfCompanies.Any(c => c.Id == comp.CompanyId) && company is not null)
+                    {
+                        ListOfCompanies.Add(company);
+                    }
+                }
+            }
+        }
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private string ShowRecipientsString(Company company)
+    {
+        if (Contacts is not null)
+        {
+            var contacts = Contacts.Where(contact => contact.CompanyId == company.Id && !contact.Contact_Deleted).ToList();
+
+            List<string> RecipientList = new();
+
+            if (contacts.Count > 0)
+            {
+                foreach (var contact in contacts)
+                {
+                    if (!RecipientList.Any(rec => rec == contact.Email) && contact.Email is not null)
+                    {
+                        RecipientList.Add(contact.Email);
+                    }
+                }
+                return String.Join("; ", RecipientList.ToArray());
+            }
+            else
+            {
+                return "There are no contacts to be displayed";
+            }
+        }
+        else
+        {
+            return "There are no contacts to be displayed";
+        }
+    }
+
+    private async Task ViewFileContents(string name)
+    {
+        var File = FileList.FirstOrDefault(file => file.Name == name);
+
+        if (File is not null && BlazorDownloadFileService is not null)
+        {
+            await BlazorDownloadFileService.DownloadFile(File.Name, Convert.FromBase64String(File.Base64String), File.IBrowser.ContentType);
+        }
+    }
+
+    private async Task ModalShowEmailAttachments(int NotifId)
+    {
+        IsLoading = true;
+
+        if (AttachmentsList is not null)
+        {
+            var attachments = AttachmentsList.Where(att => att.Notifications_Id == NotifId);
+
+            AttachmentHistory.Clear();
+
+            foreach (var attachment in attachments)
+            {
+                AttachmentHistory.Add(attachment);
+            }
+
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ViewAttachmentHistoryContents(string name, string base64String, string type)
+    {
+        if (BlazorDownloadFileService is not null)
+        {
+            await BlazorDownloadFileService.DownloadFile(name, Convert.FromBase64String(base64String), type);
+        }
+    }
+
+
+    private async ValueTask LoadFiles(InputFileChangeEventArgs e)
+    {
+
+        var files = e.GetMultipleFiles(maximumFileCount: 100);
+
+        var startIndex = uploadedFiles.Count;
+
+        foreach (var file in files)
+        {
+            var progress = new FileUploadProgress(file.Name, file.Size);
+            uploadedFiles.Add(progress);
+
+            var ms = new MemoryStream();
+            await file.OpenReadStream(1024 * 1024 * 32).CopyToAsync(ms);
+            ms.Position = 0;
+            var base64String = Convert.ToBase64String(ms.ToArray());
+
+            FileList.Add(new UploadedFile(file.Name, base64String, file));
+        }
+
+        await using var timer = new Timer(_ => InvokeAsync(() => StateHasChanged()));
+        timer.Change(TimeSpan.FromMilliseconds(500), TimeSpan.FromMilliseconds(500));
+
+        // Upload files
+        byte[] buffer = System.Buffers.ArrayPool<byte>.Shared.Rent(4096);
+        try
+        {
+            foreach (var file in files)
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                while (await stream.ReadAsync(buffer) is int read && read > 0)
+                {
+                    uploadedFiles[startIndex].UploadedBytes += read;
+
+                    var readData = buffer.AsMemory().Slice(0, read);
+                }
+                startIndex++;
+            }
+
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<byte>.Shared.Return(buffer);
+            StateHasChanged();
+        }
+    }
+    // Use the Meziantou.Framework.ByteSize NuGet package.
+    string FormatBytes(long value)
+    => ByteSize.FromBytes(value).ToString("fi2", CultureInfo.CurrentCulture);
+
+    record FileUploadProgress(string FileName, long Size)
+    {
+        public long UploadedBytes { get; set; }
+        public double UploadedPercentage => (double)UploadedBytes / (double)Size * 100d;
+    }
+
+
+    private async void HandleNotifSubmit()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+        IsBusy = true;
+        IsBusyMessage = "Sending...";
+        SendNotifError = null;
+        SendNotifSuccess = null;
+
+        if (SelectedCompaniesCount == 0 || SelectedCompaniesCount is null)
+        {
+            IsBusy = false;
+            IsBusyMessage = null;
+            SendNotifError = "Please select at least one company to send the notification to.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SubjectLine)) 
+        {
+            IsBusy = false;
+            IsBusyMessage = null;
+            SendNotifError = "Please add a subject line.";
+            return;
+        }
+
+        if (Quill is not null)
+        {
+
+            try
+            {
+                await emailService.SendNotification(SubjectLine, SendNotifSuccess, SendNotifError, message, QuillContent, Quill, FileList,
+                SelectedCompanies, EmailToPerson, TemplateEmail, Notif, Db_EmailAttach, RecipientObject);
+
+                SendNotifSuccess = "Sent Successfully!";
+
+                var QuillTemplate = @$"<p>{@EmailToPerson}</p>" +
+                                    "<br />" +
+                                    "<p>Thank you,</p>" +
+                                    "<p>Purchasing Administrator</p>" +
+                                    "<p>HHC/MCPHD</p>" +
+                                    "<p>quotes@hhcorp.org</p>" +
+                                    "<br />";
+
+                await this.Quill.LoadHTMLContent(QuillTemplate);
+                message.Attachments.Clear();
+                SelectedCompanies.Clear();
+                SelectedCompaniesCount = SelectedCompanies.Count();
+                RelatedCompanies.Clear();
+                CheckedTypes.Clear();
+                CheckedCategories.Clear();
+                FilteredCategories.Clear();
+                SubjectLine = "";
+                FileList.Clear();
+                uploadedFiles.Clear();
+                tab1 = true;
+                tab3 = false;
+                TypeAll = false;
+                CategoryAll = false;
+                CompanyAll = false;
+                FilterTypeString = null;
+                FilterCategoryString = null;
+                FilterCompanyString = null;
+            }
+            catch
+            {
+                SendNotifError = "There was an error while sending the notification. Please try again.";
+            }
+            finally
+            {
+                IsBusy = false;
+                IsBusyMessage = null;
+                StateHasChanged();
+                LoadData();
+            }
+        }
+    }
+
+    private void RemoveFile(FileUploadProgress file)
+    {
+        uploadedFiles.Remove(file);
+
+        var listfile = FileList.First(list => list.Name == file.FileName);
+        FileList.Remove(listfile);
+        StateHasChanged();
+    }
+
+    private async Task FilterKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task ButtonFilterClick()
+    {
+        await LoadData();
+    }
+
+    private IQueryable<Business_Types> AddTypeFilter(IQueryable<Business_Types> TypeQuery)
+    {
+        if (!string.IsNullOrWhiteSpace(FilterTypeString))
+        {
+            return TypeQuery.Where(type => type.Type_Name != null && type.Type_Name.Contains(this.FilterTypeString));
+        }
+        return TypeQuery;
+    }
+}

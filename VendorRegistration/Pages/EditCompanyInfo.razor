@@ -1,0 +1,243 @@
+﻿@page "/edit/companyinfo/{CompanyId:int}"
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject CompanyService companyService
+@inject AccountService accountService
+@inject AddressService addressService
+@inject EncryptionService encryptionService
+
+<div class="container d-flex flex-column position-relative">
+
+    @if (Company == null)
+    {
+        <div class="mb-3">Loading...</div>
+    }
+    else
+    {
+
+        <div class="d-flex flex-column">
+            <a class="btn btn-sm btn-secondary align-self-start" href="/"><i class="fa-solid fa-sm fa-chevron-left"></i> Home</a>
+            <h2 class="title mb-4 align-self-center">Company: <strong>@Company.Name</strong></h2>
+        </div>
+
+        <div class="tab-div mb-2 align-self-center">
+            <button @onclick="@HandleAccountActive" class="tab1-btn @(AccountActive == true ? "active-page" : "")" type="button">Account</button>
+            <button @onclick="@HandleInfoActive" class="tab2-btn btn @(InfoActive == true ? "active-page" : "")" type="button">Company Info</button>
+            <button @onclick="@HandleAddressActive" class="tab3-btn btn @(AddressActive == true ? "active-page" : "")" type="button">Address</button>
+        </div>
+
+
+        @if (AccountActive)
+        {
+            @if (Account == null)
+            {
+                <div>Loading...</div>
+            }
+            else
+            {
+                <div class="create-account-container mb-4 shadow">
+                    <h3 class="mb-4">Account</h3>
+                    <AccountForm Company="@Company" Companies="@Companies" Accounts="@Accounts" OnSubmit="@HandleAccountSubmit" SaveAccountError="@SaveAccountError" SaveAccountSuccess="@SaveAccountSuccess" IsEdit="true" Account="@Account" />
+                </div>
+            }
+        }
+        @if (InfoActive)
+        {
+            <div class="create-account-container mb-4 shadow">
+                <h3 class="mb-4">Company Information</h3>
+                <CompanyInfoForm InitialSSN="@InitialSSN" Accounts="@Accounts" Companies="@Companies" FormattedId="@FormattedId" SaveCompanyInfoSuccess="@SaveCompanyInfoSuccess" SaveCompanyInfoError="@SaveCompanyInfoError" OnSubmit="@HandleCompanySubmit" IsEdit="true" Company="@Company" />
+            </div>
+        }
+
+        @if (AddressActive)
+        {
+            @if (Address == null)
+            {
+                <div>Loading...</div>
+            }
+            else
+            {
+                <div class="create-account-container mb-4 shadow">
+                    <h3 class="mb-4">Address</h3>
+                    <AddressForm SaveAddressSuccess="@SaveAddressSuccess" SaveAddressError="@SaveAddressError" OnSubmit="@HandleAddressSubmit" IsEdit="true" Address="@Address" />
+                </div>
+            }
+        }
+    }
+
+</div>
+
+@code {
+    [Parameter]
+    public int CompanyId { get; set; }
+    private string? UserCompanyId { get; set; }
+    private List<Company>? Companies { get; set; }
+
+    private Company? Company { get; set; }
+    private VendorAccount? Account { get; set; }
+    private List<VendorAccount>? Accounts { get; set; }
+    private Address? Address { get; set; }
+
+    private string? SaveAccountSuccess { get; set; }
+    private string? SaveAccountError { get; set; }
+
+    private string? SaveCompanyInfoSuccess { get; set; }
+    private string? SaveCompanyInfoError { get; set; }
+
+    private string? SaveAddressSuccess { get; set; }
+    private string? SaveAddressError { get; set; }
+
+    private bool AccountActive = true;
+    private bool InfoActive = false;
+    private bool AddressActive = false;
+
+    private string? InitialSSN { get; set; }
+    private string? FormattedId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
+        var claims = userAuth.User.Claims.ToList();
+
+        UserCompanyId = claims?.FirstOrDefault(claim => claim.Type.Equals("Company"))?.Value;
+        var role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+
+        if (role != "Admin" && role != "SuperUser")
+        {
+            if (UserCompanyId != CompanyId.ToString())
+            {
+                NavigationManager.NavigateTo($"/edit/companyinfo/{UserCompanyId}");
+            }
+        }
+        Companies = companyService.GetAllCompanies();
+        Accounts = accountService.GetVendorAccounts();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadData();
+
+    }
+
+    private async Task LoadData()
+    {
+        Company = companyService.GetCompanyById(CompanyId);
+        Companies = companyService.GetAllCompanies();
+        Accounts = accountService.GetVendorAccounts();
+
+        if (Company is not null && Company.Fed_Id_SSN is not null)
+        {
+            FormattedId = encryptionService.Decrypt(Company.Fed_Id_SSN);
+
+            if (Regex.IsMatch(FormattedId, @"^(\d{9})|(^\d{3}-\d{2}-\d{4}$)|(^[1-9]\d?-\d{7})$") && !Company.EmployeeIdNumber)
+            {
+                FormattedId = FormattedId.Insert(5, "-").Insert(3, "-");
+            }
+            else if (Regex.IsMatch(FormattedId, @"^(\d{9})|(^\d{3}-\d{2}-\d{4}$)|(^[1-9]\d?-\d{7})$") && Company.EmployeeIdNumber)
+            {
+                FormattedId = FormattedId.Insert(2, "-");
+            }
+            else
+            {
+                FormattedId = "Tax Id format is incorrect";
+            }
+
+            InitialSSN = encryptionService.Decrypt(Company.Fed_Id_SSN);
+        }
+
+        Account = accountService.GetAccountByCompanyId(CompanyId);
+        Address = addressService.GetAddressFromCompanyId(CompanyId);
+        SaveAccountSuccess = null;
+        SaveAccountError = null;
+        SaveCompanyInfoSuccess = null;
+        SaveCompanyInfoError = null;
+        SaveAddressSuccess = null;
+        SaveAddressError = null;
+
+    }
+
+    private async Task HandleAccountSubmit(bool isValid)
+    {
+        if (isValid)
+        {
+            SaveAccountSuccess = "Saved Account changes successfully!";
+        }
+        else
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task HandleCompanySubmit(bool isValid)
+    {
+        if (isValid)
+        {
+            SaveCompanyInfoSuccess = "Saved Company Info changes successfully!";
+
+            FormattedId = encryptionService.Decrypt(Company.Fed_Id_SSN);
+
+            if (Regex.IsMatch(FormattedId, @"^(\d{9})|(^\d{3}-\d{2}-\d{4}$)|(^[1-9]\d?-\d{7})$") && !Company.EmployeeIdNumber)
+            {
+                FormattedId = FormattedId.Insert(5, "-").Insert(3, "-");
+            }
+            else if (Regex.IsMatch(FormattedId, @"^(\d{9})|(^\d{3}-\d{2}-\d{4}$)|(^[1-9]\d?-\d{7})$") && Company.EmployeeIdNumber)
+            {
+                FormattedId = FormattedId.Insert(2, "-");
+            }
+            else
+            {
+                FormattedId = "Tax Id format is incorrect";
+            }
+
+            InitialSSN = encryptionService.Decrypt(Company.Fed_Id_SSN);
+        }
+        else
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task HandleAddressSubmit(bool isValid)
+    {
+        if (isValid)
+        {
+            if (Address is not null && Company is not null)
+            {
+                try
+                {
+                    addressService.DbUpdateAddress(Address);
+                    Company.EditedSince = DateTime.Now;
+                    companyService.DbUpdateCompany(Company);
+                    SaveAddressSuccess = "Saved Address changes successfully!";
+                }
+                catch
+                {
+                    await LoadData();
+                    SaveAddressError = "There was an error while saving Address changes. Please try again.";
+                }
+            }
+        }
+    }
+
+    private void HandleAccountActive()
+    {
+        AccountActive = true;
+        InfoActive = false;
+        AddressActive = false;
+    }
+
+    private void HandleInfoActive()
+    {
+        AccountActive = false;
+        InfoActive = true;
+        AddressActive = false;
+    }
+
+    private void HandleAddressActive()
+    {
+        AccountActive = false;
+        InfoActive = false;
+        AddressActive = true;
+    }
+}
+

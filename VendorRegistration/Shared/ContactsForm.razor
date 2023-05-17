@@ -1,0 +1,422 @@
+﻿@inject IJSRuntime JS
+@inject AuthorizedContactsService contactService
+@inject CompanyService companyService
+
+<EditForm class="contacts-form" Model="@Authorized_Contact" OnValidSubmit="() => HandleContactsComplete()">
+    <div class="table-wrapper">
+        <table class="contacts" style="width: 100%;" id="table">
+            <thead>
+                <tr class="header-rows">
+                    <th>First Name<span style="color: red;"> *</span></th>
+                    <th>Last Name<span style="color: red;"> *</span></th>
+                    <th>Email<span style="color: red;"> *</span></th>
+                    <th>Phone Number<span style="color: red;"> *</span></th>
+                    <th> </th>
+                </tr>
+            </thead>
+            <tbody>
+
+                @if (ContactList is null && IsEdit)
+                {
+                    <div>Loading...</div>
+                }
+                else if (ContactList is not null && IsEdit)
+                {
+                    @foreach (var contact in ContactList)
+                    {
+                        <tr class="inputted-contacts">
+                            <td class="expand"><input class="form-control" @bind-value="@contact.FirstName" /></td>
+                            <td class="expand"><input class="form-control" @bind-value="@contact.LastName" /></td>
+                            <td class="expand"><input class="form-control" @bind-value="@contact.Email" /></td>
+                            <td class="expand"><input class="form-control" @bind-value="@contact.Phone_Number" /></td>
+                            <td class="expand">
+                                <button @onclick="() => DeleteContact(contact.Id)" type="button"
+                                style="--bs-btn-padding-y: .5rem; --bs-btn-padding-x: .8rem;"
+                                class="del-cont btn btn-danger btn-sm">
+                                    <span>
+                                        <i alt="trash icon" class="fa-solid fa-trash fa-lg"></i>
+                                    </span>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+                else if (Contacts is not null && !IsEdit)
+                {
+                    @foreach (var contact in Contacts)
+                    {
+                        <tr class="inputted-contacts">
+                            <td class="expand"><input readonly class="form-control" @bind-value="@contact.FirstName" /></td>
+                            <td class="expand"><input readonly class="form-control" @bind-value="@contact.LastName" /></td>
+                            <td class="expand"><input readonly class="form-control" @bind-value="@contact.Email" /></td>
+                            <td class="expand"><input readonly class="form-control" @bind-value="@contact.Phone_Number" /></td>
+                            <td class="expand">
+                                <button @onclick="() => DeleteContactRegisterForm(contact)" type="button"
+                                style="--bs-btn-padding-y: .5rem; --bs-btn-padding-x: .8rem;"
+                                class="del-cont btn btn-danger btn-sm">
+                                    <span>
+                                        <i alt="trash icon" class="fa-solid fa-trash fa-lg"></i>
+                                    </span>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+
+
+                <tr class="input-rows">
+                    <td>
+                        <label for="first-name" hidden>First Name</label>
+                        <InputText @bind-Value="@FirstName" id="first-name" type="text" name="contacts-first-name" class="first form-control" />
+                    </td>
+                    <td>
+                        <label for="last-name" hidden>Last Name</label>
+                        <InputText @bind-Value="@LastName" id="last-name" type="text" name="contacts-last-name" class="last form-control" />
+                    </td>
+                    <td>
+                        <label for="contact-email" hidden>Contact Email</label>
+                        <input @bind-value="@Email" id="contact-email" type="text" name="contacts-email" class="contact-email form-control" />
+                    </td>
+                    <td>
+                        <label for="number" hidden>Phone Number</label>
+                        <input @bind-value="@Number" id="number" pattern="[0-9]{10}" max="10" type="text" name="contacts-phone-number" class="form-control" />
+                    </td>
+                    <td>
+                        <button style="width: 70px;" type="button" @onclick="() => HandleContactAdd()" class="add-contact btn btn-primary btn-sm">
+                            <span class="d-flex align-items-center"><i alt="plus sign icon" class="fa-regular fa-plus mr-1"></i> Add</span>
+                        </button>
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+
+    @if (ContactError is not null)
+    {
+        <div class="alert alert-danger mt-2">@ContactError</div>
+    }
+    @if (SuccessMessage is not null)
+    {
+        <div class="alert alert-success mt-2">@SuccessMessage</div>
+    }
+
+    <br />
+    @if (IsEdit)
+    {
+        <button type="button" @onclick="() => HandleContactsComplete()" class="btn btn-success btn-sm mb-3">Save Contacts Info</button>
+    }
+    else
+    {
+        <button type="button" @onclick="() => HandlePrevious()" class="btn btn-primary mr-2">Previous</button>
+
+        <button type="submit" class="btn btn-primary">Next</button>
+    }
+</EditForm>
+
+
+@code {
+    [Parameter]
+    public Company? Company { get; set; }
+    //[Parameter]
+    public Authorized_Contacts? Authorized_Contact = new Authorized_Contacts();
+    [Parameter]
+    public string FirstName { get; set; } = default!;
+    [Parameter]
+    public string LastName { get; set; } = default!;
+    [Parameter]
+    public string Email { get; set; } = default!;
+    [Parameter]
+    public double? Number { get; set; }
+    [Parameter]
+    public string? ContactError { get; set; } = default!;
+
+    [Parameter]
+    public bool IsEdit { get; set; }
+
+    [Parameter]
+    public List<Authorized_Contacts>? ContactList { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback<int> ContactsOnPrevious { get; set; }
+
+    [Parameter]
+    public bool ContactListAdded { get; set; }
+
+    [Parameter]
+    public List<Authorized_Contacts>? Contacts { get; set; } 
+
+    private Authorized_Contacts? SingleContact { get; set; }
+
+    private string? SuccessMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    protected async Task LoadData()
+    {
+
+        if (IsEdit && Company is not null)
+        {
+            ContactList = contactService.GetContactsFromCompanyId(Company.Id);
+        }
+
+        if (ContactError is not null)
+        {
+            ContactError = null;
+        }
+    }
+
+    private async Task HandleContactAdd()
+    {
+        if (!string.IsNullOrWhiteSpace(FirstName) && !string.IsNullOrWhiteSpace(LastName) && !string.IsNullOrWhiteSpace(Email) && Number != null && Company is not null)
+        {
+            var numberString = Number.ToString();
+
+            bool EmailValid = Regex.IsMatch(Email, @"^((?!\.)[\w-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$");
+            if (numberString is not null)
+            {
+                bool PhoneValid = Regex.IsMatch(numberString, @"^(\d{3}-\d{3}-\d{4}|\d{10}|(\d{3})\s?\d{3}-\d{4})$");
+
+
+                if (EmailValid == true && PhoneValid == true)
+                {
+                    try
+                    {
+                        Authorized_Contact = new Authorized_Contacts();
+
+                        Authorized_Contact.CompanyId = Company.Id;
+                        Authorized_Contact.FirstName = FirstName;
+                        Authorized_Contact.LastName = LastName;
+                        Authorized_Contact.Email = Email;
+                        Authorized_Contact.Phone_Number = Number;
+
+                        if (IsEdit)
+                        {
+                            if (ContactList is not null)
+                            {
+                                ContactList.Add(Authorized_Contact);
+
+                                contactService.DbAddContact(Authorized_Contact, Company);
+                            }
+                        }
+                        else
+                        {
+                            if (Contacts is not null)
+                            {
+                                Contacts.Add(Authorized_Contact);
+                            }
+                        }
+
+                        StateHasChanged();
+                        LoadData();
+                        SuccessMessage = "Contact successfully added!";
+                        FirstName = "";
+                        LastName = "";
+                        Email = "";
+                        Number = null;
+                        ContactError = null;
+                    }
+                    catch
+                    {
+                        SuccessMessage = null;
+                        ContactError = "There was an error adding a contact. Please try again.";
+                    }
+                }
+                else if (!EmailValid)
+                {
+                    SuccessMessage = null;
+                    ContactError = "Invalid Email. Please use the following format: XXX@example.com";
+                }
+                else if (!PhoneValid)
+                {
+                    SuccessMessage = null;
+                    ContactError = "Invalid PhoneNumber. Please use the following format: XXXXXXXXXXX (no dashes or spaces)";
+                }
+            }
+            else
+            {
+                SuccessMessage = null;
+                ContactError = "Please fill all fields to add a contact";
+            }
+        }
+        else
+        {
+            SuccessMessage = null;
+            ContactError = "Please fill out all fields to add a contact";
+        }
+    }
+
+    private async Task HandleContactsComplete()
+    {
+
+        if (!IsEdit)
+        {
+            if (Contacts is not null)
+            {
+                var ContactsCount = Contacts.Count();
+                if (ContactsCount == 0)
+                {
+                    SuccessMessage = null;
+                    ContactError = "There is no contact information present. Please add a contact";
+                    return;
+                }
+            }
+        }
+        else
+        {
+            if (ContactList is not null)
+            {
+                var ContactsCount = ContactList.Count();
+
+                if (ContactsCount == 0)
+                {
+                    SuccessMessage = null;
+                    ContactError = "There is no contact information present. Please add a contact";
+                    return;
+                }
+                try
+                {
+
+                    foreach (var contact in ContactList)
+                    {
+                        if (!string.IsNullOrWhiteSpace(contact.FirstName) && contact.Phone_Number != null && !string.IsNullOrWhiteSpace(contact.Email) && !string.IsNullOrWhiteSpace(contact.LastName))
+                        {
+                            var numberString = contact.Phone_Number.ToString();
+
+                            bool EmailValid = Regex.IsMatch(contact.Email, @"^((?!\.)[\w-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$");
+                            if (numberString is not null)
+                            {
+                                bool PhoneValid = Regex.IsMatch(numberString, @"^(\d{3}-\d{3}-\d{4}|\d{10}|(\d{3})\s?\d{3}-\d{4})$");
+
+                                if (!EmailValid)
+                                {
+                                    SuccessMessage = null;
+                                    ContactError = "Invalid Email. Please use the following format: XXX@example.com";
+                                    return;
+                                }
+                                else if (!PhoneValid)
+                                {
+                                    SuccessMessage = null;
+                                    ContactError = "Invalid PhoneNumber. Please use the following format: XXXXXXXXXXX (no dashes or spaces)";
+                                    return;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            SuccessMessage = null;
+                            ContactError = "Please fill all fields. Can't save changes with empty fields.";
+                            return;
+                        }
+                    }
+
+                    contactService.DbUpdateEveryContact(ContactList, Company);
+                    SuccessMessage = "Saved Contact changes successfully!";
+                    ContactError = null;
+                }
+                catch
+                {
+                    await LoadData();
+                    await OnSubmit.InvokeAsync(false);
+                    ContactError = "There was an error while saving Contact changes. Please try again.";
+                }
+            }
+        }
+        if (!IsEdit)
+        {
+            if (OnSubmit.HasDelegate && Contacts is not null)
+            {
+                foreach(var contact in Contacts)
+                {
+                    if (string.IsNullOrWhiteSpace(contact.FirstName) || string.IsNullOrWhiteSpace(contact.LastName) || string.IsNullOrWhiteSpace(contact.Email) || contact.Phone_Number == null)
+                    {
+                        SuccessMessage = null;
+                        ContactError = "Please fill all fields. Can't save changes with empty fields.";
+                        return;
+                    }
+                    else if (!Regex.IsMatch(contact.Email, @"^((?!\.)[\w-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$"))
+                    {
+                        SuccessMessage = null;
+                        ContactError = "Invalid Email. Please use the following format: XXX@example.com";
+                        return;
+                    }
+                    else if (!Regex.IsMatch(contact.Phone_Number.ToString(), @"^(\d{3}-\d{3}-\d{4}|\d{10}|(\d{3})\s?\d{3}-\d{4})$"))
+                    {
+                        SuccessMessage = null;
+                        ContactError = "Invalid PhoneNumber. Please use the following format: XXXXXXXXXXX (no dashes or spaces)";
+                        return;
+                    }
+                }
+
+                foreach(var c in Contacts)
+                {
+                    ContactList.Add(c);
+                }
+
+                await OnSubmit.InvokeAsync(true);
+            }
+        }
+    }
+
+    private void DeleteContactRegisterForm(Authorized_Contacts contact)
+    {
+        if (Contacts is not null)
+        {
+            Contacts.Remove(contact);
+        }
+    }
+
+    private async Task DeleteContact(int ContactId)
+    {
+        SingleContact = contactService.GetContactFromId(ContactId);
+
+        if (ContactList is not null)
+        {
+            var ContactsCount = ContactList.Count();
+
+            if (ContactsCount == 1 && IsEdit)
+            {
+                SuccessMessage = null;
+                ContactError = "Must have at least one contact. Please add a contact before deleting one.";
+                return;
+            }
+
+            if (SingleContact is not null)
+            {
+                var isOk = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete Contact {SingleContact.FirstName} {SingleContact.LastName}?");
+
+                if (isOk)
+                {
+                    try
+                    {
+                        SingleContact.Contact_Deleted = true;
+
+                        contactService.DbUpdateContactAndCompany(SingleContact, Company);
+                        LoadData();
+                        //await OnSubmit.InvokeAsync(false);
+                        SuccessMessage = "Contact deleted successfully!";
+                        ContactList.Remove(SingleContact);
+                        StateHasChanged();
+                    }
+                    catch
+                    {
+                        await OnSubmit.InvokeAsync(false);
+                        await LoadData();
+                        ContactError = "There was an error while deleting contact. Please try again.";
+                    }
+                }
+            }
+        }
+    }
+
+    public async Task HandlePrevious()
+    {
+        await ContactsOnPrevious.InvokeAsync(4);
+    }
+}

@@ -1,0 +1,453 @@
+﻿@page "/account/login"
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject AccountService accountService
+@inject CompanyService companyService
+@inject VendorLinksService vendorLinksService
+@inject EmailSenderService emailService
+
+<style>
+    .login-form {
+        width: 340px;
+        margin: 50px auto;
+        border: #ccc solid 1px;
+        border-radius: 0.25rem;
+        padding: 30px;
+    }
+        .login-form h2 {
+            margin: 0 0 15px;
+        }
+    .btn {
+        min-height: 38px;
+        border-radius: 0.25rem;
+    }
+    .btn {
+        font-size: 15px;
+        font-weight: bold;
+    }
+    .card {
+        max-width: 300px;
+        margin-top: 60px;
+    }
+    input {
+        width: 100%;
+    }
+    .m-w-300 {
+        max-width: 300px;
+    }
+    .btn-login {
+        background-color: #6AA12B;
+        border-color: #6AA12B;
+        color: #FFF;
+    }
+        .btn-login:disabled,
+        .btn-login[disabled] {
+            background-color: #B7EE78;
+            border-color: #B7EE78;
+            color: #FFF;
+        }
+    .auth-fluid-hhc {
+        background: url(.//Hasbrook.PNG) 10% 0% !important;
+        background-size: cover !important;
+        background-repeat: no-repeat !important;
+    }
+    label {
+        font-weight: 700;
+    }
+</style>
+
+<AuthorizeView Context="Auth">
+    <NotAuthorized>
+        <body class="authentication-bg pb-0 w-100" data-layout-config='{"darkMode":false}'>
+
+            <div class="auth-fluid auth-fluid-hhc">
+                <!--Auth fluid left content -->
+                <div class="auth-fluid-form-box">
+                    <div class="align-items-center d-flex h-100">
+                        <div style="padding: 0rem;" class="card-body">
+                            <EditForm Model="@login" OnValidSubmit="@HandleValidSubmit">
+                                <!-- Logo -->
+                                <div class="text-center">
+
+                                    <a href="" @onclick:preventDefault>
+                                        <span><img src="lib/hyper/images/HHCMCPHD logo.png" alt="HHC and MCPHD logo" height="100"></span>
+                                    </a>
+                                </div>
+
+                                <div class="margin-bottom"></div>
+                                <div class="margin-bottom"></div>
+                                <div class="margin-bottom-sm"></div>
+                                <!-- title-->
+                                <h4 class="mt-0 text-center">Vendors</h4>
+
+                                @if (ForgotPassword)
+                                {
+                                        <p class="text-muted text-center mb-4">Please enter your username (email) and a link will be sent to reset your password.</p>
+
+                                        <div class="form-group">
+                                            <label for="email">Username:</label>
+                                            <input class="form-control" id="email" placeholder="Enter your username" @bind="email" />
+                                        </div>
+
+                                        <button disabled="@disabled" @onclick="() => SendEmail()" type="button" class="btn btn-success btn-block">Send Email</button>
+                                        <a href="" @onclick:preventDefault @onclick="CancelForgotPassword" class="text-muted float-right"><small>Go back to Login</small></a>
+
+                                    @if (successMessage is not null)
+                                    {
+                                                <div class="alert alert-success mt-4">@successMessage</div>
+                                    }
+                                }
+                                else
+                                {
+                                    @if (HHCLogin)
+                                    {
+                                                <p class="text-muted text-center mb-4">Enter your network username and password.</p>
+                                    }
+                                    else
+                                    {
+                                                <p class="text-muted text-center mb-4">Enter your email and password.</p>
+                                    }
+
+                                        <!-- form -->
+                                        <form action="#">
+
+                                            <div class="form-group">
+                                                <label for="login-type">Choose a Login Type:</label>
+                                                <select id="login-type" class="form-control" @onchange="(e) => HandleLoginChange(e.Value)">
+                                                    <option selected value="Vendor">Vendor Login</option>
+                                                    <option value="HHC">HHC Employee Login</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="emailaddress">Username</label>
+                                                <InputText class="form-control" id="username" placeholder="Enter your username" @bind-Value="login.Username" />
+                                                <ValidationMessage For="@(() => login.Username)" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="password">Password</label>
+                                                <InputText class="form-control" type="password" placeholder="Enter your password" id="password" @bind-Value="login.Password" @onkeypress="HandleEnterKeyPressed" />
+                                                <ValidationMessage For="@(() => login.Password)" />
+                                            </div>
+                                        @if (showPasscode && HHCLogin)
+                                        {
+                                                    <div class="form-group">
+                                                        <label for="passcode">Passcode</label>
+                                                        <InputText class="form-control" id="passcode" @bind-Value="login.Passcode" @onkeypress="HandleEnterKeyPressed" placeholder="Enter your Duo passcode" />
+                                                        <ValidationMessage For="@(() => login.Passcode)" />
+                                                    </div>
+                                        }
+                                            <div class="form-group mb-0 text-center">
+                                            @if (showDuo && HHCLogin)
+                                            {
+                                                        <div class="d-flex">
+                                                            <span class="badge badge-success flex-fill mb-1">Sending Duo push</span>
+                                                        </div>
+                                            }
+                                                <button class="btn btn-success btn-block @(loading ? "disabled" : "")" type="button" @onclick="HandleValidSubmit">
+                                                @if (loading)
+                                                {
+                                                            <span class="spinner-border spinner-border-sm mr-1"></span>
+                                                }
+                                                else
+                                                {
+                                                            <i class="mdi mdi-login"></i> <span>Log In</span>
+                                                }
+                                                </button>
+                                            </div>
+
+                                        @if (HHCLogin)
+                                        {
+                                                    <div class="form-group">
+                                                        <a href="" @onclick="TogglePasscode" @onclick:preventDefault class="text-muted float-right">
+                                                            <small>
+                                                        @(
+                                                                showPasscode ? "Hide Passcode" : "Use Passcode"
+                                                                )
+                                                            </small>
+                                                        </a>
+                                                    </div>
+                                        }
+                                        else
+                                        {
+                                                    <div class="form-group">
+                                                        <a href="" @onclick="ToggleForgotPassword" @onclick:preventDefault class="text-muted float-right">
+                                                            <small>
+                                                                Forgot Password?
+                                                            </small>
+                                                        </a>
+                                                    </div>
+                                        }
+                                        </form>
+                                }
+                                @if (error)
+                                {
+                                        <div class="alert alert-danger text-center mt-4" role="alert">
+                                        @errorMessage
+                                        </div>
+                                }
+                                <!-- end form-->
+                            </EditForm>
+
+                            <div class="fw-bold mt-4 d-flex align-items-center justify-content-end">
+                                <h5>Don't have account?</h5>
+                                <a style="font-weight: bold" class="fw-bold ml-2" href="/register">Register Here</a>
+                            </div>
+
+                        </div> <!-- end .card-body -->
+                    </div> <!-- end .align-items-center.d-flex.h-100-->
+                </div>
+                <!-- end auth-fluid-form-box-->
+
+            </div>
+            <!-- end auth-fluid-->
+        </body>
+
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+    private Account login = new Account();
+    protected string? errorMessage;
+    protected bool error;
+    protected bool loading;
+    private bool showPasscode = false;
+    private bool showDuo = false;
+    private List<VendorAccount>? Accounts { get; set; }
+    private bool HHCLogin { get; set; }
+    private Company[]? Companies { get; set; }
+    private bool ForgotPassword { get; set; }
+    private string? email { get; set; }
+    private string? successMessage { get; set; }
+    private Vendor_Links? vendorLinks = new Vendor_Links();
+    private bool disabled { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Accounts = accountService.GetVendorAccounts();
+        Companies = companyService.GetVerifiedCompaniesArray();
+    }
+
+    public async Task HandleValidSubmit()
+    {
+        error = false;
+        await Task.Delay(1);
+        errorMessage = "";
+
+        if (HHCLogin)
+        {
+            if (loading) { return; }
+
+            try
+            {
+                loading = true;
+                showDuo = true;
+                StateHasChanged();
+                ((CustomAuthenticationStateProvider)AuthenticationStateProvider).ValidateLogin(login.Username, login.Password, login.Passcode);
+
+                var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                //ThemeService.GetThemeData(login.Username.ToUpper());
+                NavigationManager.NavigateTo("/");
+            }
+            catch (Exception e)
+            {
+                loading = false;
+                error = true;
+                errorMessage = e.Message;
+                await Task.Delay(1);
+            }
+        }
+        else
+        {
+            try
+            {
+                if (Accounts is not null && login.Username is not null)
+                {
+                    StateHasChanged();
+                    Company? Company = null;
+                    VendorAccount? Account = null;
+
+                    var AccountList = accountService.GetAccountsByUsername(login.Username.ToLower().ToString());
+
+                    if (AccountList is not null && AccountList.Count() > 0 && Companies is not null)
+                    {
+                        foreach (var account in AccountList)
+                        {
+                            bool isMatch = Companies.Any(company => company.Id == account.CompanyId && company.Completed_Registeration && !company.Is_Deleted);
+
+                            if (isMatch)
+                            {
+                                Company = Companies.FirstOrDefault(company => company.Id == account.CompanyId && company.Completed_Registeration && !company.Is_Deleted);  //get company matching account email and is not deleted
+                                Account = account;
+                            }
+                        }
+
+                        if (Company is not null && Account is not null)
+                        {
+
+                            var PasswordVerified = BCrypt.Net.BCrypt.Verify(login.Password, Account.Password);
+
+                            if (PasswordVerified)
+                            {
+                                ((CustomAuthenticationStateProvider)AuthenticationStateProvider).ValidateLoginForCompany(login.Username, login.Password, Company.Id, Company.Name);
+                                var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+                                NavigationManager.NavigateTo("/");
+                            }
+                            else
+                            {
+                                loading = false;
+                                error = true;
+                                errorMessage = "Wrong username or password";
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            loading = false;
+                            error = true;
+                            errorMessage = "The company already exists and don't have account privileges";
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        loading = false;
+                        error = true;
+                        errorMessage = "Wrong username or password";
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                loading = false;
+                error = true;
+                errorMessage = "Wrong username or password";
+                return;
+            }
+        }
+    }
+
+    public void TogglePasscode()
+    {
+        showPasscode = !showPasscode;
+    }
+
+    public void ToggleForgotPassword()
+    {
+        ForgotPassword = !ForgotPassword;
+        error = false;
+        errorMessage = null;
+    }
+
+    public void CancelForgotPassword()
+    {
+        ForgotPassword = false;
+        email = null;
+        error = false;
+        errorMessage = null;
+        successMessage = null;
+    }
+
+    public async void HandleEnterKeyPressed(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await HandleValidSubmit();
+            await InvokeAsync(() => { StateHasChanged(); });
+        }
+    }
+
+    public void UpdateButtons(bool l, string et, bool es)
+    {
+        loading = l;
+        errorMessage = et;
+        error = es;
+        StateHasChanged();
+    }
+
+    private void Callback(MouseEventArgs obj)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void HandleHHCLoginSwitch()
+    {
+        HHCLogin = !HHCLogin;
+    }
+
+    private void HandleLoginChange(object args)
+    {
+        if (args.ToString() == "HHC")
+        {
+            HHCLogin = true;
+        }
+        else
+        {
+            HHCLogin = false;
+        }
+    }
+
+    private async Task SendEmail()
+    {
+        if (email is not null)
+        {
+            bool EmailValid = Regex.IsMatch(email, @"^((?!\.)[\w-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$");
+
+            if (!EmailValid)
+            {
+                error = true;
+                errorMessage = "Please enter a valid email";
+                successMessage = null;
+                return;
+            }
+
+            if (Accounts is not null)
+            {
+                var AccountList = accountService.GetAccountsByUsername(email.ToLower().ToString());
+                var baseURI = NavigationManager.BaseUri;
+
+                if (AccountList is not null && AccountList.Count() > 0 && Companies is not null)
+                {
+                    foreach (var account in AccountList)
+                    {
+                        bool isMatch = Companies.Any(company => company.Id == account.CompanyId && company.Completed_Registeration && !company.Is_Deleted);
+
+                        if (isMatch)
+                        {
+
+                            if (vendorLinks is not null)
+                            {
+                                emailService.SendPasswordResetEmail(Companies, account, email, baseURI, vendorLinks);
+                            }
+
+                            disabled = true;
+                            error = false;
+                            errorMessage = null;
+                            successMessage = "Email sent successfully!";
+                            return;
+                        }
+                        else
+                        {
+                            errorMessage = "There is not a company registered or the company has been deleted";
+                            error = true;
+                            loading = false;
+                            successMessage = null;
+                        }
+                    }
+                }
+                else
+                {
+                    loading = false;
+                    error = true;
+                    errorMessage = "There is not a Company registered in this email.";
+                    successMessage = null;
+                    return;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,92 @@
+﻿@page "/edit/company-contacts/{CompanyId:int}"
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject CompanyService companyService
+@inject AuthorizedContactsService contactService
+
+@if (ContactList is null)
+{
+    <div>Loading...</div>
+}
+else
+{
+    <div class="container d-flex flex-column align-items-center">
+
+        @if (Company is not null)
+        {
+            <div class="d-flex flex-column" style="width: 100%;">
+                <a class="btn btn-sm btn-secondary align-self-start" href="/"><i class="fa-solid fa-sm fa-chevron-left"></i> Home</a>
+                <h2 class="title mb-4 align-self-center">Company: <strong>@Company.Name</strong></h2>
+            </div>
+        }
+
+        <div class="form-wrapper mb-3">
+            <div class="contacts-group mb-4 shadow">
+
+                <h3 class="contacts-title fs-3 fw-bold mb-4">Company Contacts</h3>
+                <ContactsForm ContactList="@ContactList" Company="@Company" IsEdit="true" OnSubmit="@HandleContactSubmit"
+                          ContactError="@ContactError" FirstName="@FirstName" LastName="@LastName" Email="@Email" Number="@Number" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int CompanyId { get; set; }
+    private string? UserCompanyId { get; set; }
+
+    public Authorized_Contacts? Authorized_Contact { get; set; }
+    public List<Authorized_Contacts>? ContactList { get; set; }
+
+    public Company? Company { get; set; }
+
+    private string FirstName { get; set; } = default!;
+    private string LastName { get; set; } = default!;
+    private string Email { get; set; } = default!;
+    private int? Number { get; set; }
+    private string? ContactError { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
+
+        var claims = userAuth.User.Claims.ToList();
+
+        UserCompanyId = claims?.FirstOrDefault(claim => claim.Type.Equals("Company"))?.Value;
+        var role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+
+        if (role != "Admin" && role != "SuperUser")
+        {
+            if (UserCompanyId != CompanyId.ToString())
+            {
+                NavigationManager.NavigateTo($"/edit/company-contacts/{UserCompanyId}");
+            }
+        }
+        ContactList = contactService.GetContactsFromCompanyId(CompanyId);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        Company = companyService.GetCompanyById(CompanyId);
+        ContactList = contactService.GetContactsFromCompanyId(CompanyId);
+        ContactError = null;
+    }
+
+    private async Task HandleContactSubmit(bool isValid)
+    {
+        if (Authorized_Contact is null || !isValid)
+        {
+            await LoadData();
+        }
+        else
+        {
+            await LoadData();
+        }
+    }
+}

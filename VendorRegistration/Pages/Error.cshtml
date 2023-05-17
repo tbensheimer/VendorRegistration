@@ -1,5 +1,6 @@
 ﻿@page
-@model VendorRegistration.Pages.ErrorModel
+@using HHC.Vendors_Purchasing.Pages
+@model ErrorModel
 
 <!DOCTYPE html>
 <html lang="en">
@@ -21,7 +22,7 @@
             @if (Model.ShowRequestId)
             {
                 <p>
-                    <strong>Request ID:</strong> <code>@Model.RequestId</code>
+                    <strong>Request ID:</strong> <code>Model.RequestId</code>
                 </p>
             }
 

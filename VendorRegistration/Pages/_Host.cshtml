@@ -1,8 +1,9 @@
 ﻿@page "/"
-@namespace VendorRegistration.Pages
+@namespace HHC.Vendors_Purchasing.Pages
+@using VendorRegistration
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @{
-    Layout = "_Layout";
+    Layout = "_Layout.cshtml";
 }
 
-<component type="typeof(App)" render-mode="ServerPrerendered" />
+<component type="typeof(App)" render-mode="Server" />

@@ -1,0 +1,90 @@
+﻿@page "/account-verification/{Random}/{CompanyId:int}"
+@inject NavigationManager NavigationManager
+@inject VendorLinksService vendorLinksService
+@inject CompanyService companyService
+
+<div style="width: 100%;" class="d-flex justify-content-center align-items-center">
+    @if (Verified)
+    {
+            <div class="border shadow p-3" style="width: 65%; min-width: 350px; max-width: 1100px;">
+                <div class="text-center d-flex flex-column align-items-center">
+                    <h1 class="mt-0"><i alt="check mark icon" class="fa-solid fa-check"></i></h1>
+
+                    <h2 class="mt-0">Registration Complete!</h2>
+
+                    <h4 class="w-75 mb-2 mx-auto">Thank you for registering your company.</h4>
+                    <h5 class="w-75 mb-4 mx-auto">An account was successfully created. You may log into your account whenever to update and make changes.</h5>
+                    <p>
+                        Your company will receive notifications from us if we require your services and for updates.
+                        Please note that completing this form does not gurantee that we will do business with your company.
+                    </p>
+
+                    <br />
+                    <a href="/account/login" class="fw-bold btn btn-success btn-block">Go to Login Page</a>
+                </div>
+
+            </div>
+    }
+    else
+    {
+            <div class="alert alert-danger">There was an error while verifying your account. Please try again.</div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int CompanyId { get; set; }
+
+    [Parameter]
+    public string? Random { get; set; }
+
+    public VendorAccount[]? Accounts { get; set; }
+
+    public List<Vendor_Links>? Links { get; set; }
+
+    public Company? Company { get; set; }
+
+    private string? currentLink { get; set; }
+
+    private bool Verified { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Links = vendorLinksService.GetVendorLinks();
+        Company = companyService.GetCompanyById(CompanyId);
+        currentLink = NavigationManager.Uri;
+
+        if (Links.Any(link => link.Link == currentLink) && Company is not null)
+        {
+            try
+            {
+                var LinkToRemove = Links.FirstOrDefault(link => link.Link == currentLink);
+
+                if (LinkToRemove is not null)
+                {
+                    Company.Completed_Registeration = true;
+                    vendorLinksService.DbRemoveLinkAndUpdateCompany(LinkToRemove, Company);
+                    Verified = true;
+                    NavigationManager.NavigateTo($"{currentLink}");
+                }
+                else
+                {
+                    await LoadData(false);
+                }
+            }
+            catch
+            {
+                await LoadData(false);
+            }
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/account/login");
+        }
+    }
+
+    private async Task LoadData(bool value)
+    {
+        Verified = value;
+    }
+}
