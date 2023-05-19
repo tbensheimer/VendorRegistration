@@ -1,6 +1,8 @@
 ﻿@page "/register"
+@using System.Security.Claims
 @inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider AuthenticationStateProvider
+@*@inject AuthenticationStateProvider AuthenticationStateProvider
+*@
 @inject CompanyService companyService
 @inject AccountService accountService
 @inject AddressService addressService
@@ -244,9 +246,9 @@
 
         @if (tab6)
         {
-                    <AuthorizeView Policy="AdminOrSuperUser">
-                        <Authorized>
-                            <div class="tab-content">
+                    @*<AuthorizeView Policy="AdminOrSuperUser">
+                        <Authorized>*@
+                   @*         <div class="tab-content">
                                 <div class="reg-complete-group mt-3 mb-4 shadow">
                                     <div class="text-center d-flex flex-column align-items-center">
                                         <h1 class="mt-0"><i alt="check mark icon" class="fa-solid fa-check"></i></h1>
@@ -276,13 +278,13 @@
                                             <div class="alert alert-danger mt-3 text-center">@ErrorMessage</div>
                             }
                                 </div>
-                            </div>
-                        </Authorized>
-                    </AuthorizeView>
+                            </div>*@
+                    @*    </Authorized>
+                    </AuthorizeView>*@
 
-                    <AuthorizeView Policy="HHCUser">
-                        <Authorized>
-                            <div class="tab-content">
+                  @*  <AuthorizeView Policy="HHCUser">
+                        <Authorized>*@
+                      @*      <div class="tab-content">
                                 <div class="reg-complete-group mt-3 mb-4 shadow">
                                     <div class="text-center d-flex flex-column align-items-center">
                                         <h1 class="mt-0"><i alt="check mark icon" class="fa-solid fa-check"></i></h1>
@@ -311,12 +313,12 @@
                                             <div class="alert alert-danger mt-3 text-center">@ErrorMessage</div>
                             }
                                 </div>
-                            </div>
-                        </Authorized>
-                    </AuthorizeView>
+                            </div>*@
+                      @*  </Authorized>
+                    </AuthorizeView>*@
 
-                    <AuthorizeView>
-                        <NotAuthorized>
+                  @*  <AuthorizeView>
+                        <NotAuthorized>*@
                             <div class="tab-content">
                                 <div class="reg-complete-group mt-3 mb-4 shadow">
                                     <div class="text-center d-flex flex-column align-items-center">
@@ -359,8 +361,8 @@
                             }
                                 </div>
                             </div>
-                        </NotAuthorized>
-                    </AuthorizeView>
+                      @*  </NotAuthorized>
+                    </AuthorizeView>*@
         }
         </div>
 }
@@ -409,10 +411,13 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
+        //var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
+
+        var userAuth = ClaimsPrincipal.Current;
+
         if (userAuth is not null)
         {
-            claims = userAuth.User.Claims.ToList();
+            claims = userAuth.Claims.ToList();
         }
 
         if (claims is not null)

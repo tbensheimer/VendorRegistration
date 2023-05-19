@@ -3,8 +3,8 @@
 @inject CategoryService categoryService
 @inject TypeService typeService
 
-<AuthorizeView Policy="AdminOrSuperUser">
-    <Authorized>
+@*<AuthorizeView Policy="AdminOrSuperUser">
+    <Authorized>*@
 
         <div class="container d-flex flex-column">
 
@@ -205,11 +205,11 @@
             </div>
 
         </div>
-    </Authorized>
-    <NotAuthorized>
-        <div class="alert alert-danger text-center">You are not authorized to view this page.</div>
-    </NotAuthorized>
-</AuthorizeView>
+   @* </Authorized>
+    <NotAuthorized>*@
+@*        <div class="alert alert-danger text-center">You are not authorized to view this page.</div>
+*@   @* </NotAuthorized>
+</AuthorizeView>*@
 
 @code {
 

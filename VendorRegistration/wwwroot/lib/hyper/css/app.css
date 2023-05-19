@@ -10875,8 +10875,8 @@ body.auth-fluid-pages[data-leftbar-compact-mode=condensed] {
   -webkit-box-align: stretch;
       -ms-flex-align: stretch;
           align-items: stretch;
-  background: url("../images/bg-auth.jpg") center;
-  background-size: cover; }
+/*  background: url("../images/bg-auth.jpg") center;
+*/  background-size: cover; }
   .auth-fluid .auth-fluid-form-box {
     max-width: 480px;
     border-radius: 0;

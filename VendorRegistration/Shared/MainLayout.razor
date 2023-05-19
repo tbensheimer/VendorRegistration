@@ -64,7 +64,10 @@ else
         if ((user == null || (user != null && !user.Identity.IsAuthenticated)) && !NavigationManager.Uri.Contains("account/login"))
         {
 
-            if (!NavigationManager.Uri.Contains("/register") && !NavigationManager.Uri.Contains("/password-reset") && !NavigationManager.Uri.Contains("/account-verification") && !NavigationManager.Uri.Contains("/terms-and-conditions"))
+            if (!NavigationManager.Uri.Contains("/register") && !NavigationManager.Uri.Contains("/password-reset") && !NavigationManager.Uri.Contains("/account-verification") && !NavigationManager.Uri.Contains("/terms-and-conditions") &&
+
+
+             !NavigationManager.Uri.Contains("/types-and-categories-list") && !NavigationManager.Uri.Contains("/category-list"))
             {
                 NavigationManager.NavigateTo($"account/login");
             }

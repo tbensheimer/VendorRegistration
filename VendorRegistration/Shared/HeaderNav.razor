@@ -45,8 +45,8 @@
                                 <span>HHC</span>
                             </a>
                         </div>
-                        <AuthorizeView Policy="AdminOrSuperUser">
-                            <Authorized>
+                      @*  <AuthorizeView Policy="AdminOrSuperUser">
+                            <Authorized>*@
 
                                 <div class="col">
                                     <a class="dropdown-icon-item" href="https://intranet.hhcorp.org/" target="_blank">
@@ -54,11 +54,11 @@
                                         <span>Nexus</span>
                                     </a>
                                 </div>
-                            </Authorized>
-                        </AuthorizeView>
+                       @*     </Authorized>
+                        </AuthorizeView>*@
                     </div>
-                    <AuthorizeView Policy="AdminOrSuperUser">
-                        <Authorized>
+                   @* <AuthorizeView Policy="AdminOrSuperUser">
+                        <Authorized>*@
                             <div class="row no-gutters">
                                 <div class="col">
                                     <a class="dropdown-icon-item" href="https://citrix.hhcorp.org/" target="_blank">
@@ -79,25 +79,25 @@
                                     </a>
                                 </div>
                             </div>
-                        </Authorized>
-                    </AuthorizeView>
+                     @*   </Authorized>
+                    </AuthorizeView>*@
                 </div>
             </div>
         </li>
 
-        <AuthorizeView Policy="User">
-            <Authorized>
+ @*       <AuthorizeView Policy="User">
+            <Authorized>*@
                 <li style="margin-top: 20px;">
                     <a href="" @onclick="PerformLogout" @onclick:preventDefault class="dropdown-item notify-item">
                         <i class="mdi mdi-logout mr-1"></i>
                         <span>Logout</span>
                     </a>
                 </li>
-            </Authorized>
-        </AuthorizeView>
-
+        @*    </Authorized>
+        </AuthorizeView>*@
+@*
         <AuthorizeView Policy="AdminOrSuperUser">
-            <Authorized>
+            <Authorized>*@
 
                 <li class="dropdown notification-list">
                    @* <a class="nav-link dropdown-toggle nav-user arrow-none mr-0" data-toggle="dropdown" href="#" role="button" aria-haspopup="false"
@@ -151,11 +151,11 @@
 
                     </div>
                 </li>
-            </Authorized>
-        </AuthorizeView>
+       @*     </Authorized>
+        </AuthorizeView>*@
 
-        <AuthorizeView Policy="HHCUser">
-            <Authorized>
+       @* <AuthorizeView Policy="HHCUser">
+            <Authorized>*@
 
                 <li class="dropdown notification-list">
                     <a class="nav-link dropdown-toggle nav-user arrow-none mr-0" data-toggle="dropdown" href="#" role="button" aria-haspopup="false"
@@ -205,8 +205,8 @@
 
                     </div>
                 </li>
-            </Authorized>
-        </AuthorizeView>
+      @*      </Authorized>
+        </AuthorizeView>*@
 
     </ul>
     <button class="button-menu-mobile open-left disable-btn">

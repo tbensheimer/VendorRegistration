@@ -1,20 +1,20 @@
 ﻿﻿.tab {
-    background-color: #eff4f8;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+    background-color: #eff4f8 !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr !important;
 }
 
 .tab button {
-    color: gray;
-    font-weight: bold;
-    background-color: inherit;
-    float: left;
-    border: none;
-    outline: none;
-    cursor: pointer;
-    padding: 14px 16px;
-    transition: 0.3s;
-    font-size: 1.05rem;
+    color: gray !important;
+    font-weight: bold !important;
+    background-color: inherit !important;
+    float: left !important;
+    border: none !important;
+    outline: none !important;
+    cursor: pointer !important;
+    padding: 14px 16px !important;
+    transition: 0.3s !important;
+    font-size: 1.05rem !important;
 }
 
     .tab button:hover {
@@ -22,8 +22,8 @@
     }
 
     .tab button.active {
-        color: white;
-        background-color: #0d6efd;
+        color: white !important;
+        background-color: #0d6efd !important;
     }
 
 .reg-complete-group {

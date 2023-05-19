@@ -23,8 +23,8 @@
     <div class="h-100" id="left-side-menu-container">
         <!--- Sidemenu -->
         <ul class="metismenu side-nav"
-        <AuthorizeView Policy="User">
-            <Authorized>
+
+
 
                  <li class="side-nav-item">
             <NavLink class="side-nav-link" href="" Match="NavLinkMatch.All">
@@ -52,11 +52,11 @@
                         <span> Types/Categories </span>
                     </NavLink>
                 </li>
-                </Authorized>
-                </AuthorizeView>
+              @*  </Authorized>
+                </AuthorizeView>*@
 
-                <AuthorizeView Policy="AdminOrSuperUser">
-                    <Authorized>
+            @*    <AuthorizeView Policy="AdminOrSuperUser">
+                    <Authorized>*@
                          <li class="side-nav-item">
                      <NavLink class="side-nav-link" href="" Match="NavLinkMatch.All">
                          <i class="fa-solid fa-house"></i>
@@ -104,11 +104,11 @@
                         <span>Reporting</span>
                     </NavLink>
                 </li>
-
+@*
                 </Authorized>
-                </AuthorizeView>
+                </AuthorizeView>*@
 
-                <AuthorizeView Policy="HHCUser">
+   @*             <AuthorizeView Policy="HHCUser">
                     <Authorized>
                          <li class="side-nav-item">
                      <NavLink class="side-nav-link" href="" Match="NavLinkMatch.All">
@@ -132,10 +132,10 @@
                 </li>
 
                 </Authorized>
-                </AuthorizeView>
+                </AuthorizeView>*@
 
-            <AuthorizeView>
-                <NotAuthorized>
+           @* <AuthorizeView>
+                <NotAuthorized>*@
                 <li class="side-nav-item">
                     <NavLink class="side-nav-link" href="/register">
                         <i class="uil uil-user-circle"></i>
@@ -149,8 +149,8 @@
                     <span> Log In </span>
                     </NavLink>
                 </li>
-            </NotAuthorized>
-            </AuthorizeView>
+           @* </NotAuthorized>
+            </AuthorizeView>*@
 
             </ul>
 
