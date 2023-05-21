@@ -63,11 +63,12 @@ namespace VendorRegistration.Services.FunctionsService.RegisterService
                 message.To.Add(new MailAddress($"{Account.Email}"));
                 message.Body = $"<h2>Account Verification:</h2><p>Hello {Company.Name},</p> <br/><p>Please click on this temporary link below to verify your account and finish the registration process: {baseURI}account-verification/{randomString}/{Company.Id}</p><br/><p>Thank you,<br><p>Purchasing Administrator<br></p><p>HHC/MCPHD <br></p><p>quotes@hhcorp.org</p>";
 
-                var sClient = new SmtpClient("SMTP.HHCORP.ORG");
+                var sClient = new SmtpClient("fakeClient.org");
                 sClient.Port = 25;
                 sClient.UseDefaultCredentials = false;
 
-                sClient.Send(message);
+                //sClient.Send(message);
+                Company.Completed_Registeration = true;  //Used HHC's SMTP Client for Email Sending
 
                 if (vendorLinks is not null)
                 {
@@ -88,11 +89,12 @@ namespace VendorRegistration.Services.FunctionsService.RegisterService
                 message.To.Add(new MailAddress($"{Account.Email}"));
                 message.Body = $"<h2>Accepting Terms and Conditions:</h2><p>Hello {Company.Name},</p> <br/><p>Please click on the link below to finish the registration process by accepting the terms and conditions: {baseURI}terms-and-conditions/{randomString}/{Company.Id}</p><br/><p>Thank you,<br><p>Purchasing Administrator<br></p><p>HHC/MCPHD <br></p><p>quotes@hhcorp.org</p>";
 
-                var sClient = new SmtpClient("SMTP.HHCORP.ORG");
+                var sClient = new SmtpClient("fakeClient.org");
                 sClient.Port = 25;
                 sClient.UseDefaultCredentials = false;
 
-                sClient.Send(message);
+                Company.Completed_Registeration = true;
+                //sClient.Send(message);
             }
 
             _db.SaveChanges();

@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using System.Security.Claims
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject EmployeeDataService employeeDataService
 @inject CompanyService companyService
@@ -8,10 +9,10 @@
 @inject CompanyTypesAndCatsService ctcService
 
 <PageTitle>Home</PageTitle>
-
+@*
 <AuthorizeView Policy="User">
     <Authorized>
-
+*@
         <div class="row">
             <div class="col">
                 <div class="card tilebox-one">
@@ -83,12 +84,12 @@
 
 
         </div>
-
+@*
     </Authorized>
-</AuthorizeView>
+</AuthorizeView>*@
 
-<AuthorizeView Policy="AdminOrSuperUser">
-    <Authorized>
+@*<AuthorizeView Policy="AdminOrSuperUser">
+    <Authorized>*@
 
         <div class="row">
             <div class="col">
@@ -197,11 +198,11 @@
             </div>
         </div>
 
-    </Authorized>
-</AuthorizeView>
+ @*   </Authorized>
+</AuthorizeView>*@
 
-<AuthorizeView Policy="HHCUser">
-    <Authorized>
+@*<AuthorizeView Policy="HHCUser">
+    <Authorized>*@
 
         <div class="row">
             <div class="col">
@@ -303,14 +304,14 @@
             </div>
         </div>
 
-    </Authorized>
-</AuthorizeView>
+   @* </Authorized>
+</AuthorizeView>*@
 
-<AuthorizeView>
+@*<AuthorizeView>
     <NotAuthorized>
         <div class="alert alert-danger text-center">You are not authorized to view this page.</div>
     </NotAuthorized>
-</AuthorizeView>
+</AuthorizeView>*@
 
 @code {
     private Company? Company { get; set; }
@@ -340,23 +341,28 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
+        //var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
+        var userAuth = ClaimsPrincipal.Current;
+        List<Claim> claims = new();
 
-        var claims = userAuth.User.Claims.ToList();
-
-        var role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
-
-        if (role == "Admin" || role == "HHCUser" && userAuth.User.Identity is not null)
+        if(userAuth != null)
         {
-            var adminList = employeeDataService.GetEmployees();         // gets every employee in CIS or Purchasing
-            var userEmail = userAuth.User.Identity.Name + "@hhcorp.org";
+            claims = userAuth.Claims.ToList();
 
-            if (adminList is not null && userAuth.User.Identity.Name is not null)
+            var role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+
+            if (role == "Admin" || role == "HHCUser" && userAuth.Identity is not null)
             {
-                var user = adminList?.FirstOrDefault(a => a.Email.ToLower() == userAuth.User.Identity.Name.ToLower() || a.Email.ToLower() == userEmail.ToLower());
-                if (user is not null)
+                var adminList = employeeDataService.GetEmployees();         // gets every employee in CIS or Purchasing
+                var userEmail = userAuth.Identity.Name + "@hhcorp.org";
+
+                if (adminList is not null && userAuth.Identity.Name is not null)
                 {
-                    UserName = user.FullName;
+                    var user = adminList?.FirstOrDefault(a => a.Email.ToLower() == userAuth.Identity.Name.ToLower() || a.Email.ToLower() == userEmail.ToLower());
+                    if (user is not null)
+                    {
+                        UserName = user.FullName;
+                    }
                 }
             }
 
