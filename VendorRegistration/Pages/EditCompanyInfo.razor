@@ -1,10 +1,12 @@
 ﻿@page "/edit/companyinfo/{CompanyId:int}"
+@using System.Security.Claims
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject CompanyService companyService
 @inject AccountService accountService
 @inject AddressService addressService
 @inject EncryptionService encryptionService
+@inject IVendorClaimsPrincipal vendorClaimsPrinc
 
 <div class="container d-flex flex-column position-relative">
 
@@ -14,7 +16,6 @@
     }
     else
     {
-
         <div class="d-flex flex-column">
             <a class="btn btn-sm btn-secondary align-self-start" href="/"><i class="fa-solid fa-sm fa-chevron-left"></i> Home</a>
             <h2 class="title mb-4 align-self-center">Company: <strong>@Company.Name</strong></h2>
@@ -93,14 +94,22 @@
 
     private string? InitialSSN { get; set; }
     private string? FormattedId { get; set; }
+    private ClaimsPrincipal? userAuth { get; set; }
+    private string role { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
-        var claims = userAuth.User.Claims.ToList();
+        userAuth = vendorClaimsPrinc.GetCurrentClaimsPrincipal();
+        List<Claim> claims = new();
 
-        UserCompanyId = claims?.FirstOrDefault(claim => claim.Type.Equals("Company"))?.Value;
-        var role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+        if (userAuth != null)
+        {
+            claims = userAuth.Claims.ToList();
+
+            role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+
+            UserCompanyId = claims?.FirstOrDefault(claim => claim.Type.Equals("Company"))?.Value;
+        }
 
         if (role != "Admin" && role != "SuperUser")
         {

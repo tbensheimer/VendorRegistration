@@ -1,6 +1,8 @@
 ﻿@page "/account/login"
 @using System.Security.Claims
+@using VendorRegistration.Models
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IVendorClaimsPrincipal vendorClaimsPrinc
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
 @inject AccountService accountService
@@ -246,10 +248,42 @@
                 loading = true;
                 showDuo = true;
                 StateHasChanged();
-                ((CustomAuthenticationStateProvider)AuthenticationStateProvider).ValidateLogin(login.Username, login.Password, login.Passcode);
+                //HHC Duo Login Authentication
+                //((CustomAuthenticationStateProvider)AuthenticationStateProvider).ValidateLogin(login.Username, login.Password, login.Passcode);
 
-                var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-                //ThemeService.GetThemeData(login.Username.ToUpper());
+                //need to authenticate if user is admin (database or just one admin with email)
+
+                                User user = new User();
+                                user.UserName = login.Username;
+                                user.Password = login.Password;
+                                user.Domain = "";
+                                user.Role = "admin";
+
+                                List<Claim> claims = new List<Claim>();
+                                claims.Add(new Claim(ClaimTypes.Name, user.UserName));
+
+
+                                if (user.Role.Contains("admin"))
+                                {
+                                    claims.Add(new Claim("Role", "Admin"));
+                                }
+                                if (user.Role.Contains("user"))
+                                {
+                                    claims.Add(new Claim("Role", "User"));
+                                }
+                                if (user.Role.Contains("hhcUser"))
+                                {
+                                    claims.Add(new Claim("Role", "HHCUser"));
+                                }
+
+                                claims.Add(new Claim("Company", $"{user.CompanyId}"));
+
+                                claims.Add(new Claim("Domain", user.Domain));
+
+                                ClaimsIdentity identity = new ClaimsIdentity(claims, "apiauth_type");
+
+                                vendorClaimsPrinc.StoreClaimsPrincipal(new ClaimsPrincipal(identity));
+
                 NavigationManager.NavigateTo("/");
             }
             catch (Exception e)
@@ -323,7 +357,8 @@
                                 claims.Add(new Claim("Domain", user.Domain));
 
                                 ClaimsIdentity identity = new ClaimsIdentity(claims, "apiauth_type");
-                                ClaimsPrincipal cachedClaimsPrincipal = new ClaimsPrincipal(identity);
+
+                                vendorClaimsPrinc.StoreClaimsPrincipal(new ClaimsPrincipal(identity));
 
                                 NavigationManager.NavigateTo("/");
                             }

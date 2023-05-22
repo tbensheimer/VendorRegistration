@@ -1,4 +1,5 @@
 ﻿@page "/edit/{CompanyId:int}"
+@using System.Security.Claims
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject CompanyService companyService
@@ -10,9 +11,10 @@
 @inject AuthorizedContactsService contactsService
 @inject EncryptionService encryptionService
 @inject TypeCatCompanyChangesService changeService
+@inject IVendorClaimsPrincipal vendorClaimsPrinc
 
-<AuthorizeView Policy="AdminOrSuperUser">
-    <Authorized>
+@if(role == "Admin")
+{
         <div class="container d-flex flex-column position-relative">
 
             @if (Company == null)
@@ -220,12 +222,12 @@
                 }
             }
         </div>
-
-    </Authorized>
-    <NotAuthorized>
-        <div class="alert alert-danger text-center">You are not authorized to view this page.</div>
-    </NotAuthorized>
-</AuthorizeView>
+}
+else
+{
+            <div class="alert alert-danger text-center">You are not authorized to view this page.</div>
+}
+   
 
 @code {
     [Parameter]
@@ -283,14 +285,22 @@
     private int? CurrentCategoryCount { get; set; }
     private string? SuccessMessage { get; set; }
     private string? ErrorMessage { get; set; }
+    private ClaimsPrincipal? userAuth {get; set;}
+    private string role { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
-        var claims = userAuth.User.Claims.ToList();
+        userAuth = vendorClaimsPrinc.GetCurrentClaimsPrincipal();
+        List<Claim> claims = new();
 
-        UserCompanyId = claims?.FirstOrDefault(claim => claim.Type.Equals("Company"))?.Value;
-        var role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+        if (userAuth != null)
+        {
+            claims = userAuth.Claims.ToList();
+
+            role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+
+            UserCompanyId = claims?.FirstOrDefault(claim => claim.Type.Equals("Company"))?.Value;
+        }
 
         if (role != "Admin" && role != "SuperUser")
         {
@@ -460,7 +470,6 @@
         if (isValid)
         {
             SaveAccountSuccess = "Saved Account changes successfully!";
-            //LoadData();
         }
     }
 

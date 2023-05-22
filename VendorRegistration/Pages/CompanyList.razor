@@ -1,14 +1,15 @@
 ﻿@page "/companies"
 @page "/companies/{deletedOnly:bool}"
+@using System.Security.Claims
 @inject IJSRuntime JS
 @inject CompanyService companyService
 @inject CompanyTypesAndCatsService ctcService
 @inject CategoryService categoryService
 @inject TypeService typeService
+@inject IVendorClaimsPrincipal vendorClaimsPrinc
 
-
-<AuthorizeView Policy="AdminOrSuperUser">
-    <Authorized>
+        @if(role == "Admin")
+        {
         <div class="container d-flex flex-column align-items-center position-relative">
 
             <div class="d-flex flex-column" style="width: 100%;">
@@ -175,11 +176,11 @@
             }
         </div>
 
-    </Authorized>
-    <NotAuthorized>
-        <div class="alert alert-danger text-center">You are not authorized to view this page.</div>
-    </NotAuthorized>
-</AuthorizeView>
+}
+else
+{
+    <div class="alert alert-danger text-center">You are not authorized to view this page.</div>
+}
 
 @code {
     [Parameter]
@@ -190,6 +191,8 @@
     private List<Company_Types_Categories>? CompTypeCatList { get; set; }
     private List<Business_Types>? Types { get; set; }
     private List<Business_Categories>? Categories { get; set; }
+    private string role {get; set;}
+    private ClaimsPrincipal? userAuth { get; set; }
 
     private bool ActiveCompanies = true;
     private bool RemovedCompanies = false;
@@ -199,9 +202,17 @@
     private string? ErrorMessage { get; set; }
     private bool DataTablePresent { get; set; }
 
-
     protected override async Task OnParametersSetAsync()
     {
+        userAuth = vendorClaimsPrinc.GetCurrentClaimsPrincipal();
+        List<Claim> claims = new();
+
+        if (userAuth != null)
+        {
+            claims = userAuth.Claims.ToList();
+
+            role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+        }
         await LoadData();
     }
 
@@ -283,7 +294,6 @@
         if (Companies is not null)
         {
             Company = Companies.FirstOrDefault(comp => comp.Id == Id);
-
 
             if (Company is not null)
             {

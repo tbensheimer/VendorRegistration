@@ -7,418 +7,305 @@
 @inject TypeService typeService
 @inject CategoryService categoryService
 @inject CompanyTypesAndCatsService ctcService
+@inject IVendorClaimsPrincipal vendorClaimsPrinc
 
 <PageTitle>Home</PageTitle>
-@*
-<AuthorizeView Policy="User">
-    <Authorized>
-*@
-        <div class="row">
-            <div class="col">
-                <div class="card tilebox-one">
-                    <div class="card-body text-center">
-                        <i style="color: darkgray !important;" class="fa-solid fa-briefcase mt-2"></i>
-                        <h4 class="text-uppercase mt-0">Business with HHC/MCPHD</h4>
 
-                        <p style="width: 95%;" class="my-2">
-                            To sign up for Procurement updates, please complete Vendor Registration Form.
-                            Completion of this Form does not guarantee doing business with HHC.
-                            Participation in Sourcing Events and activities posted at <a target="_blank" href="http://purchasing.hhcorp.org/">http://purchasing.hhcorp.org/</a>
-                            (Request for Quotes, Request for Proposals, Bids & Bids for Public Works Projects) will provide an opportunity for Vendor Selection.
-                            Vendor must be registered to do business in the State of Indiana (through the Secretary of State’s office) and must not be on Federal Government Excluded Parties list.
-                        </p>
+@if (role == "User")
+{
+	<div class="row">
+		<div class="col">
+			<div class="card tilebox-one">
+				<div class="card-body text-center">
+					<i style="color: darkgray !important;" class="fa-solid fa-briefcase mt-2"></i>
+					<h4 class="text-uppercase mt-0">Business with HHC/MCPHD</h4>
 
-                        <p>
-                            Before services are rendered and product is shipped or delivered, an official HHC Purchase Order (PO) bearing a PO number and
-                            issued by the Purchasing department must be acknowledged by the vendor.
-                            No other method of purchase will obligate HHC for payment.
-                            All agreements must be fully executed by authorized parties.
-                        </p>
+					<p style="width: 95%;" class="my-2">
+						To sign up for Procurement updates, please complete Vendor Registration Form.
+						Completion of this Form does not guarantee doing business with HHC.
+						Participation in Sourcing Events and activities posted at <a target="_blank" href="http://purchasing.hhcorp.org/">http://purchasing.hhcorp.org/</a>
+						(Request for Quotes, Request for Proposals, Bids & Bids for Public Works Projects) will provide an opportunity for Vendor Selection.
+						Vendor must be registered to do business in the State of Indiana (through the Secretary of State’s office) and must not be on Federal Government Excluded Parties list.
+					</p>
 
-                        <p>
-                            Purchasing Administrator<br/>
-                            HHC/MCPHD<br/>
-                            <a target="_blank" href="mailto:quotes@hhcorp.org">quotes@hhcorp.org</a>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
+					<p>
+						Before services are rendered and product is shipped or delivered, an official HHC Purchase Order (PO) bearing a PO number and
+						issued by the Purchasing department must be acknowledged by the vendor.
+						No other method of purchase will obligate HHC for payment.
+						All agreements must be fully executed by authorized parties.
+					</p>
 
+					<p>
+						Purchasing Administrator<br />
+						HHC/MCPHD<br />
+						<a target="_blank" href="mailto:quotes@hhcorp.org">quotes@hhcorp.org</a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
 
-        <div class="row">
-            <div class="col">
-                <div class="card tilebox-one">
-                    <div class="card-body">
-                        <i style="color: darkgray !important;" class="fa-solid fa-check mt-2"></i>
-                        <h4 class="text-uppercase mt-0">Supplier Diversity Commitment</h4>
-                        <p style="width: 95%;">
-                            HHC is committed to purchasing goods and services from a diverse pool of suppliers including Minority/Women/Veteran/Disability Business Enterprises. 
-                            For more information about Minority Business Enterprises (MBE), Women Business Enterprises (WBE), Veteran Business Enterprises (VBE), and Disability-Owned Business Enterprises (DOBE) and certifications, please visit:
-                        </p>
+	<div class="row">
+		<div class="col">
+			<div class="card tilebox-one">
+				<div class="card-body">
+					<i style="color: darkgray !important;" class="fa-solid fa-check mt-2"></i>
+					<h4 class="text-uppercase mt-0">Supplier Diversity Commitment</h4>
+					<p style="width: 95%;">
+						HHC is committed to purchasing goods and services from a diverse pool of suppliers including Minority/Women/Veteran/Disability Business Enterprises.
+						For more information about Minority Business Enterprises (MBE), Women Business Enterprises (WBE), Veteran Business Enterprises (VBE), and Disability-Owned Business Enterprises (DOBE) and certifications, please visit:
+					</p>
 
-                        <p><a target="blank" href="https://www.indy.gov/activity/find-omwbd-contractor">City of Indianapolis Minority and Women Business Development</a></p>
-                        <p> <a target="blank" href="https://www.in.gov/idoa/mwbe/">State of Indiana Minority and Women’s Business Enterprise Division</a></p>
-                        <p><a target="blank" href="https://www.midstatesmsdc.org/">Mid-States Minority Supplier Development Council</a></p>
-                        <p>A list of certified vendors can be found on these Web pages (membership required for Mid-States Minority Supplier Development Council).</p>
-                    </div>
-                </div>
+					<p><a target="blank" href="https://www.indy.gov/activity/find-omwbd-contractor">City of Indianapolis Minority and Women Business Development</a></p>
+					<p> <a target="blank" href="https://www.in.gov/idoa/mwbe/">State of Indiana Minority and Women’s Business Enterprise Division</a></p>
+					<p><a target="blank" href="https://www.midstatesmsdc.org/">Mid-States Minority Supplier Development Council</a></p>
+					<p>A list of certified vendors can be found on these Web pages (membership required for Mid-States Minority Supplier Development Council).</p>
+				</div>
+			</div>
 
-            </div>
+		</div>
 
-            <div class="col">
-                <div class="card tilebox-one">
-                    <div class="card-body">
-                        <i style="color: orange !important" class="fa-solid fa-circle-exclamation mb-1"></i>
-                        <h4 class="text-uppercase mt-0">Disclaimer</h4>
-                        <p style="width: 95%;">
-                            HHC is prohibited from using federal, state or local funds to procure or obtain equipment services or systems that use
-                            covered telecommunications equipment or services (i.e., phone, internet and cloud services) provided by
-                            Huawei Technology Company, ZTE Corporation, or any of their many subsidiaries or affiliates as a substantial or essential component of any system,
-                            or as critical technology as part of any system.
-                        </p>
-                        <p>To the extent applicable, vendors will be required to acknowledge and sign the Prohibited Technology Certification.</p>
-                    </div>
-                </div>
-            </div>
+		<div class="col">
+			<div class="card tilebox-one">
+				<div class="card-body">
+					<i style="color: orange !important" class="fa-solid fa-circle-exclamation mb-1"></i>
+					<h4 class="text-uppercase mt-0">Disclaimer</h4>
+					<p style="width: 95%;">
+						HHC is prohibited from using federal, state or local funds to procure or obtain equipment services or systems that use
+						covered telecommunications equipment or services (i.e., phone, internet and cloud services) provided by
+						Huawei Technology Company, ZTE Corporation, or any of their many subsidiaries or affiliates as a substantial or essential component of any system,
+						or as critical technology as part of any system.
+					</p>
+					<p>To the extent applicable, vendors will be required to acknowledge and sign the Prohibited Technology Certification.</p>
+				</div>
+			</div>
+		</div>
 
 
-        </div>
-@*
-    </Authorized>
-</AuthorizeView>*@
+	</div>
+}
 
-@*<AuthorizeView Policy="AdminOrSuperUser">
-    <Authorized>*@
+@if (role == "Admin")
+{
+	<div class="row">
+		<div class="col">
+			<div class="card tilebox-one">
+				<div class="card-body d-flex justify-content-between">
+					<i style="color: darkgray" class="fa-solid fa-building mt-3"></i>
+					<div class="text-center">
+						<a class="text-secondary" href="/companies">
+							<h5 class="text-uppercase mt-1">Active Vendors</h5>
+							<h2>@CompanyCount</h2>
+						</a>
+					</div>
+					<div class="text-center">
+						<a class="text-secondary" href="/companies/true">
+							<h5 class="text-uppercase mt-1">Deleted Vendors</h5>
+							<h2>@DeletedCompaniesCount</h2>
+						</a>
+					</div>
+				</div>
+			</div>
 
-        <div class="row">
-            <div class="col">
-                <div class="card tilebox-one">
-                    <div class="card-body d-flex justify-content-between">
-                        <i style="color: darkgray" class="fa-solid fa-building mt-3"></i>
-                        <div class="text-center">
-                            <a class="text-secondary" href="/companies">
-                                <h5 class="text-uppercase mt-1">Active Vendors</h5>
-                                <h2>@CompanyCount</h2>
-                            </a>
-                        </div>
-                        <div class="text-center">
-                            <a class="text-secondary" href="/companies/true">
-                                <h5 class="text-uppercase mt-1">Deleted Vendors</h5>
-                                <h2>@DeletedCompaniesCount</h2>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+			<div class="card tilebox-one">
+				<div class="card-body d-flex justify-content-between">
+					<i style="color: darkgray" class="fa-solid fa-briefcase mt-3"></i>
+					<div class="text-center">
+						<a class="text-secondary" href="/minority-companies">
+							<h5 class="text-uppercase mt-1">Minority Vendors</h5>
+							<h2>@MinorityVendorsCount</h2>
+						</a>
+					</div>
+					<div class="text-center">
+						<a class="text-secondary" href="/minority-companies/certified">
+							<h5 class="text-uppercase mt-1">Certified</h5>
+							<h2>@CertifiedMinorityCount</h2>
+						</a>
+					</div>
+					<div class="text-center">
+						<a class="text-secondary" href="/minority-companies/uncertified">
+							<h5 class="text-uppercase mt-1">Uncertified</h5>
+							<h2>@UncertifiedMinorityCount</h2>
+						</a>
+					</div>
+				</div>
+			</div>
 
-                <div class="card tilebox-one">
-                    <div class="card-body d-flex justify-content-between">
-                        <i style="color: darkgray" class="fa-solid fa-briefcase mt-3"></i>
-                        <div class="text-center">
-                            <a class="text-secondary" href="/minority-companies">
-                                <h5 class="text-uppercase mt-1">Minority Vendors</h5>
-                                <h2>@MinorityVendorsCount</h2>
-                            </a>
-                        </div>
-                        <div class="text-center">
-                            <a class="text-secondary" href="/minority-companies/certified">
-                                <h5 class="text-uppercase mt-1">Certified</h5>
-                                <h2>@CertifiedMinorityCount</h2>
-                            </a>
-                        </div>
-                        <div class="text-center">
-                            <a class="text-secondary" href="/minority-companies/uncertified">
-                                <h5 class="text-uppercase mt-1">Uncertified</h5>
-                                <h2>@UncertifiedMinorityCount</h2>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+			<div id="apex-chart1" class="card mb-3 pr-3 pt-2">
+				<ApexChart TItem="Count"
+					   Title="Top 10 Highest Vendor Reg. by Business Type">
 
-                <div id="apex-chart1" class="card mb-3 pr-3 pt-2">
-                    <ApexChart TItem="Count"
-                               Title="Top 10 Highest Vendor Reg. by Business Type">
+					<ApexPointSeries TItem="Count"
+								 Items="TopTwelveCounts"
+								 Name="Companies Registered"
+								 XValue="@(c => c.TypeName)"
+								 YValue="@(c => c.TypeCount)"
+								 OrderByDescending="e=>e.Y"
+								 SeriesType="SeriesType.Bar"
+								 Color="#005ba3" />
+				</ApexChart>
+			</div>
+		</div>
 
-                        <ApexPointSeries TItem="Count"
-                                         Items="TopTwelveCounts"
-                                         Name="Companies Registered"
-                                         XValue="@(c => c.TypeName)"
-                                         YValue="@(c => c.TypeCount)"
-                                         OrderByDescending="e=>e.Y"
-                                         SeriesType="SeriesType.Bar"
-                                         Color="#005ba3" />
-                    </ApexChart>
-                </div>
-            </div>
+		<div class="col">
 
-            <div class="col">
+			<div class="card tilebox-one" style="height: 400px;">
+				<div class="card-body">
+					<i style="color: darkgray" class="fa-solid fa-user mt-3"></i>
+					<h5 class="text-uppercase mt-1">Profiles Changed the Last 30 days</h5>
+					<ul class="p-0 list-group border" style="width:85%; height: 310px; list-style: none; overflow-y: scroll;">
+						@if (RecentlyEditedCompanies.Count() > 0)
+						{
+							@foreach (var comp in RecentlyEditedCompanies.OrderByDescending(comp => comp.EditedSince))
+							{
+								<li class="list-group-item">
+									<div class="d-flex justify-content-between">
+										<p class="fw-bold">@comp.Name</p>
+										<p>@comp.EditedSince.ToShortDateString()</p>
+									</div>
+									<a href="/edit/@comp.Id" class="stretched-link"></a>
+								</li>
+							}
+						}
+						else
+						{
+							<li class="list-group-item">No Recently Edited Companies</li>
+						}
+					</ul>
+				</div>
+			</div>
 
-                <div class="card tilebox-one" style="height: 400px;">
-                    <div class="card-body">
-                        <i style="color: darkgray" class="fa-solid fa-user mt-3"></i>
-                        <h5 class="text-uppercase mt-1">Profiles Changed the Last 30 days</h5>
-                        <ul class="p-0 list-group border" style="width:85%; height: 310px; list-style: none; overflow-y: scroll;">
-                            @if (RecentlyEditedCompanies.Count() > 0)
-                            {
-                                @foreach (var comp in RecentlyEditedCompanies.OrderByDescending(comp => comp.EditedSince))
-                                {
-                                    <li class="list-group-item">
-                                        <div class="d-flex justify-content-between">
-                                            <p class="fw-bold">@comp.Name</p>
-                                            <p>@comp.EditedSince.ToShortDateString()</p>
-                                        </div>
-                                        <a href="/edit/@comp.Id" class="stretched-link"></a>
-                                    </li>
-                                }
-                            }
-                            else
-                            {
-                                <li class="list-group-item">No Recently Edited Companies</li>
-                            }
-                        </ul>
+			<div id="apex-chart2" class="card m-1 pr-3 pt-2">
+				<ApexChart TItem="Count"
+					   Title="Bottom 8 Lowest Vendor Reg. by Business Type">
+					<ApexPointSeries TItem="Count"
+								 Items="LowestFiveCounts"
+								 Name="Companies Registered"
+								 XValue="@(c => c.TypeName)"
+								 YValue="@(c => c.TypeCount)"
+								 OrderByDescending="e=>e.Y"
+								 SeriesType="SeriesType.Bar"
+								 Color="#005ba3" />
+				</ApexChart>
+			</div>
+		</div>
+	</div>
+}
 
+@if (role != "User" && role != "Admin")
+{
+	<div class="alert alert-danger text-center">You are not authorized to view this page.</div>
+}
 
-                    </div>
-                </div>
-
-                <div id="apex-chart2" class="card m-1 pr-3 pt-2">
-                    <ApexChart TItem="Count"
-                               Title="Bottom 8 Lowest Vendor Reg. by Business Type">
-
-                        <ApexPointSeries TItem="Count"
-                                         Items="LowestFiveCounts"
-                                         Name="Companies Registered"
-                                         XValue="@(c => c.TypeName)"
-                                         YValue="@(c => c.TypeCount)"
-                                         OrderByDescending="e=>e.Y"
-                                         SeriesType="SeriesType.Bar"
-                                         Color="#005ba3" />
-                    </ApexChart>
-                </div>
-            </div>
-        </div>
-
- @*   </Authorized>
-</AuthorizeView>*@
-
-@*<AuthorizeView Policy="HHCUser">
-    <Authorized>*@
-
-        <div class="row">
-            <div class="col">
-                <div class="card tilebox-one">
-                    <div class="card-body d-flex justify-content-between">
-                        <i style="color: darkgray" class="fa-solid fa-building mt-3"></i>
-                        <div class="text-center">
-                            <h5 class="text-uppercase mt-1">Active Vendors</h5>
-                            <h2>@CompanyCount</h2>
-                        </div>
-                        <div class="text-center">
-                            <h5 class="text-uppercase mt-1">Deleted Vendors</h5>
-                            <h2>@DeletedCompaniesCount</h2>
-                        </div>
-
-                        <a href="" class="stretched-link"></a>
-                    </div>
-                </div>
-
-                <div class="card tilebox-one">
-                    <div class="card-body d-flex justify-content-between">
-                        <i style="color: darkgray" class="fa-solid fa-briefcase mt-3"></i>
-                        <div class="text-center">
-                            <h5 class="text-uppercase mt-1">Minority Vendors</h5>
-                            <h2>@MinorityVendorsCount</h2>
-                        </div>
-                        <div class="text-center">
-                            <h5 class="text-uppercase mt-1">Certified</h5>
-                            <h2>@CertifiedMinorityCount</h2>
-                        </div>
-                        <div class="text-center">
-                            <h5 class="text-uppercase mt-1">Uncertified</h5>
-                            <h2>@UncertifiedMinorityCount</h2>
-                        </div>
-                        <a href="" class="stretched-link"></a>
-                    </div>
-                </div>
-
-                <div id="apex-chart1" class="card mb-3 pr-3 pt-2">
-                    <ApexChart TItem="Count"
-                               Title="Top 10 Highest Vendor Registrations by Business Type">
-
-                        <ApexPointSeries TItem="Count"
-                                         Items="TopTwelveCounts"
-                                         Name="Companies Registered"
-                                         XValue="@(c => c.TypeName)"
-                                         YValue="@(c => c.TypeCount)"
-                                         OrderByDescending="e=>e.Y"
-                                         SeriesType="SeriesType.Bar"
-                                         Color="#005ba3" />
-                    </ApexChart>
-                </div>
-            </div>
-
-            <div class="col">
-
-                <div class="card tilebox-one" style="height: 400px;">
-                    <div class="card-body">
-                        <i style="color: darkgray" class="fa-solid fa-user mt-3"></i>
-                        <h5 class="text-uppercase mt-1">Profiles Changed the Last 30 days</h5>
-                        <ul class="p-0 list-group border" style="width:85%; height: 310px; list-style: none; overflow-y: scroll;">
-                            @if (RecentlyEditedCompanies.Count() > 0)
-                            {
-                                @foreach (var comp in RecentlyEditedCompanies.OrderByDescending(comp => comp.EditedSince))
-                                {
-                                    <li class="list-group-item">
-                                        <div class="d-flex justify-content-between">
-                                            <p class="fw-bold">@comp.Name</p>
-                                            <p>@comp.EditedSince.ToShortDateString()</p>
-                                        </div>
-                                        <a href="" class="stretched-link"></a>
-                                    </li>
-                                }
-                            }
-                            else
-                            {
-                                <li class="list-group-item">No Recently Edited Companies</li>
-                            }
-                        </ul>
-
-
-                    </div>
-                </div>
-
-                <div id="apex-chart2" class="card m-1 pr-3 pt-2">
-                    <ApexChart TItem="Count"
-                               Title="Bottom 8 Lowest Vendor Registration by Business Type">
-
-                        <ApexPointSeries TItem="Count"
-                                         Items="LowestFiveCounts"
-                                         Name="Companies Registered"
-                                         XValue="@(c => c.TypeName)"
-                                         YValue="@(c => c.TypeCount)"
-                                         OrderByDescending="e=>e.Y"
-                                         SeriesType="SeriesType.Bar"
-                                         Color="#005ba3" />
-                    </ApexChart>
-                </div>
-            </div>
-        </div>
-
-   @* </Authorized>
-</AuthorizeView>*@
-
-@*<AuthorizeView>
-    <NotAuthorized>
-        <div class="alert alert-danger text-center">You are not authorized to view this page.</div>
-    </NotAuthorized>
-</AuthorizeView>*@
 
 @code {
-    private Company? Company { get; set; }
-    private string? CompanyId { get; set; }
-    private string? UserName = "User";
-    private double? CompanyCount = 0;
-    private double? DeletedCompaniesCount = 0;
+	private Company? Company { get; set; }
+	private string? CompanyId { get; set; }
+	private string? UserName = "User";
+	private double? CompanyCount = 0;
+	private double? DeletedCompaniesCount = 0;
+	private string role { get; set; }
+	private ClaimsPrincipal? userAuth { get; set; }
+	private List<Company> Companies = new();
+	private List<Business_Types> Types = new();
+	private List<Company_Types_Categories> CompTypesCats = new();
+	private List<Count> Counts = new();
+	private List<Company_Types_Categories> FilteredCtc = new();
+	private List<Company> RecentlyEditedCompanies = new();
+	private List<Count> TopTwelveCounts = new();
+	private List<Count> LowestFiveCounts = new();
+	private double MinorityVendorsCount = 0;
+	private double CertifiedMinorityCount = 0;
+	private double UncertifiedMinorityCount = 0;
 
-    private List<Company> Companies = new();
-    private List<Business_Types> Types = new();
-    private List<Company_Types_Categories> CompTypesCats = new();
-    private List<Count> Counts = new();
-    private List<Company_Types_Categories> FilteredCtc = new();
-    private List<Company> RecentlyEditedCompanies = new();
-    private List<Count> TopTwelveCounts = new();
-    private List<Count> LowestFiveCounts = new();
-    private double MinorityVendorsCount = 0;
-    private double CertifiedMinorityCount = 0;
-    private double UncertifiedMinorityCount = 0;
+	public class Count
+	{
+		public string? TypeName { get; set; }
 
-    public class Count
-    {
-        public string? TypeName { get; set; }
+		public decimal TypeCount { get; set; }
+	}
 
-        public decimal TypeCount { get; set; }
-    }
+	protected override async Task OnInitializedAsync()
+	{
+		userAuth = vendorClaimsPrinc.GetCurrentClaimsPrincipal();
+		List<Claim> claims = new();
 
-    protected override async Task OnInitializedAsync()
-    {
-        //var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
-        var userAuth = ClaimsPrincipal.Current;
-        List<Claim> claims = new();
+		if (userAuth != null)
+		{
+			claims = userAuth.Claims.ToList();
 
-        if(userAuth != null)
-        {
-            claims = userAuth.Claims.ToList();
+			role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
 
-            var role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+			//if (role == "Admin" || role == "HHCUser" && userAuth.Identity is not null)
+			//{
+			//	var adminList = employeeDataService.GetEmployees();         // gets every employee in CIS or Purchasing
+			//	var userEmail = userAuth.Identity.Name + "@hhcorp.org";
 
-            if (role == "Admin" || role == "HHCUser" && userAuth.Identity is not null)
-            {
-                var adminList = employeeDataService.GetEmployees();         // gets every employee in CIS or Purchasing
-                var userEmail = userAuth.Identity.Name + "@hhcorp.org";
+			//	if (adminList is not null && userAuth.Identity.Name is not null)
+			//	{
+			//		var user = adminList?.FirstOrDefault(a => a.Email.ToLower() == userAuth.Identity.Name.ToLower() || a.Email.ToLower() == userEmail.ToLower());
+			//		if (user is not null)
+			//		{
+			//			UserName = user.FullName;
+			//		}
+			//	}
+			//}
 
-                if (adminList is not null && userAuth.Identity.Name is not null)
-                {
-                    var user = adminList?.FirstOrDefault(a => a.Email.ToLower() == userAuth.Identity.Name.ToLower() || a.Email.ToLower() == userEmail.ToLower());
-                    if (user is not null)
-                    {
-                        UserName = user.FullName;
-                    }
-                }
-            }
+			UserName = userAuth.Identity.Name;
 
-            Companies = companyService.GetAllCompanies();
+			Companies = companyService.GetAllCompanies();
 
-            CompanyCount = companyService.GetVerifiedCompaniesCountNotDeleted();
+			CompanyCount = companyService.GetVerifiedCompaniesCountNotDeleted();
 
-            Types = typeService.GetTypesNotDeleted();
+			Types = typeService.GetTypesNotDeleted();
 
-            CompTypesCats = ctcService.GetAllCompanyTypesAndCats();
+			CompTypesCats = ctcService.GetAllCompanyTypesAndCats();
 
-            foreach (var type in Types)
-            {
-                var list = CompTypesCats.Where(ctc => ctc.Type_Id == type.Id);  // get all with same type Id
-                FilteredCtc.Clear();
+			foreach (var type in Types)
+			{
+				var list = CompTypesCats.Where(ctc => ctc.Type_Id == type.Id);  // get all with same type Id
+				FilteredCtc.Clear();
 
-                foreach (var ctc in list)
-                {
-                    var company = Companies.FirstOrDefault(comp => comp.Id == ctc.CompanyId);
+				foreach (var ctc in list)
+				{
+					var company = Companies.FirstOrDefault(comp => comp.Id == ctc.CompanyId);
 
-                    if (company is not null && company.Completed_Registeration && !company.Is_Deleted)
-                    {
-                        if (!FilteredCtc.Any(c => c.CompanyId == ctc.CompanyId)) // checks if list has company already added
-                        {
-                            FilteredCtc.Add(ctc);
-                        }
-                    }
-                }
+					if (company is not null && company.Completed_Registeration && !company.Is_Deleted)
+					{
+						if (!FilteredCtc.Any(c => c.CompanyId == ctc.CompanyId)) // checks if list has company already added
+						{
+							FilteredCtc.Add(ctc);
+						}
+					}
+				}
 
-                decimal count = FilteredCtc.Count();
+				decimal count = FilteredCtc.Count();
 
-                Count typeCount = new Count { TypeName = type.Type_Name, TypeCount = count };
+				Count typeCount = new Count { TypeName = type.Type_Name, TypeCount = count };
 
-                Counts.Add(typeCount);
-            }
+				Counts.Add(typeCount);
+			}
 
-            TopTwelveCounts = Counts.OrderByDescending(count => count.TypeCount).Take(10).ToList();
+			TopTwelveCounts = Counts.OrderByDescending(count => count.TypeCount).Take(10).ToList();
 
-            LowestFiveCounts = Counts.OrderBy(count => count.TypeCount).Take(8).ToList();
+			LowestFiveCounts = Counts.OrderBy(count => count.TypeCount).Take(8).ToList();
 
-            RecentlyEditedCompanies = companyService.GetRecentlyEditedActiveCompanies();
+			RecentlyEditedCompanies = companyService.GetRecentlyEditedActiveCompanies();
 
-            MinorityVendorsCount = companyService.GetTotalActiveMinorityVendorsCount();
+			MinorityVendorsCount = companyService.GetTotalActiveMinorityVendorsCount();
 
-            CertifiedMinorityCount = companyService.GetCertifiedMinorityVendorsCount();
+			CertifiedMinorityCount = companyService.GetCertifiedMinorityVendorsCount();
 
-            UncertifiedMinorityCount = companyService.GetUncertifiedMinorityVendorsCount();
+			UncertifiedMinorityCount = companyService.GetUncertifiedMinorityVendorsCount();
 
-            DeletedCompaniesCount = companyService.GetDeletedCompaniesCount();
-        }
+			DeletedCompaniesCount = companyService.GetDeletedCompaniesCount();
+		}
 
-        CompanyId = claims?.FirstOrDefault(claim => claim.Type.Equals("Company"))?.Value;
+		CompanyId = claims?.FirstOrDefault(claim => claim.Type.Equals("Company"))?.Value;
 
-        if (CompanyId is not null)
-        {
-            Company = companyService.GetCompanyById(Int32.Parse(CompanyId));
-        }
-    }
+		if (CompanyId is not null)
+		{
+			Company = companyService.GetCompanyById(Int32.Parse(CompanyId));
+		}
+	}
 }

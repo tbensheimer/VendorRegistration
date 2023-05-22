@@ -1,13 +1,15 @@
 ﻿@page "/minority-companies"
 @page "/minority-companies/{entryPath}"
+@using System.Security.Claims
 @inject IJSRuntime JS
 @inject CompanyService companyService
 @inject CompanyTypesAndCatsService ctcService
 @inject CategoryService categoryService
 @inject TypeService typeService
+@inject IVendorClaimsPrincipal vendorClaimsPrinc
 
-<AuthorizeView Policy="AdminOrSuperUser">
-    <Authorized>
+@if(role == "Admin")
+{
         <div class="container d-flex flex-column align-items-center position-relative">
 
             <div class="d-flex flex-column" style="width: 100%;">
@@ -160,12 +162,11 @@
                 </div>
             }
         </div>
-
-    </Authorized>
-    <NotAuthorized>
+        }
+    else
+    {
         <div class="alert alert-danger text-center">You are not authorized to view this page.</div>
-    </NotAuthorized>
-</AuthorizeView>
+    }
 
 @code {
     [Parameter]
@@ -184,10 +185,22 @@
     public string? SuccessMessage { get; set; }
     private string? ErrorMessage { get; set; }
     private bool DataTablePresent { get; set; }
+    private ClaimsPrincipal? userAuth { get; set; }
+    private string role { get; set; }
 
 
     protected override async Task OnParametersSetAsync()
     {
+        userAuth = vendorClaimsPrinc.GetCurrentClaimsPrincipal();
+        List<Claim> claims = new();
+
+        if (userAuth != null)
+        {
+            claims = userAuth.Claims.ToList();
+
+            role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+        }
+
         await LoadData();
     }
 
@@ -221,7 +234,6 @@
             ActiveCompaniesList = Companies.Where(comp => !comp.Is_Deleted && comp.Diversity_Certification == "Not Certified").ToList();
             RemovedCompaniesList = Companies.Where(comp => comp.Is_Deleted && comp.Diversity_Certification == "Not Certified").ToList();
         }
-
 
         CompTypeCatList = ctcService.GetAllCompanyTypesAndCats();
 
@@ -297,8 +309,6 @@
                 await JS.InvokeAsync<string>("blazorInterop.DataTablesAddOrderByDisabledCompany", "#removed-table");
             }
         }
-        //await DataTableChange();
-
     }
 
     private async Task HandleCompanyEnable(int CompanyId)
@@ -402,8 +412,6 @@
         string stringTypeCat = string.Join(" ", categories.ToArray());
 
         MarkupString markup = new MarkupString($"{stringTypeCat}");
-
-
         return markup;
     }
 }
