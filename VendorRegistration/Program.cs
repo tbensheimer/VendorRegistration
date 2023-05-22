@@ -37,6 +37,7 @@ builder.Services.AddServerSideBlazor();
 
 builder.Services.AddScoped<IUserService, HhcAuthenticatorUserService>();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
+builder.Services.AddSingleton<IVendorClaimsPrincipal, VendorClaimsPrincipal>();
 builder.Services.AddScoped<EmployeeDataService>();
 builder.Services.AddScoped<CompanyService>();
 builder.Services.AddScoped<TypeService>();
