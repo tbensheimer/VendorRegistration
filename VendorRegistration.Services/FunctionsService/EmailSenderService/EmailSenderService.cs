@@ -57,7 +57,7 @@ namespace VendorRegistration.Services.FunctionsService.EmailSenderService
             message.To.Add(new MailAddress($"{email}"));
             message.Body = $"<h2>Password Reset:</h2><p>Hello {company?.Name},</p> <br/><p>Please click on this temporary link below to reset your password: {baseURI}password-reset/{randomString}/{account.Id}</p><br/><p>Thank you,<br><p>Purchasing Administrator<br></p><p>HHC/MCPHD <br></p><p>quotes@hhcorp.org</p>";
 
-            var sClient = new SmtpClient("SMTP.HHCORP.ORG");
+            var sClient = new SmtpClient("fakeClient.org");
             sClient.Port = 25;
             sClient.UseDefaultCredentials = false;
 
@@ -109,7 +109,7 @@ namespace VendorRegistration.Services.FunctionsService.EmailSenderService
                     TemplateEmail = EmailToPerson + Template;
                     message.Body = TemplateEmail;
 
-                    var sClient = new SmtpClient("SMTP.HHCORP.ORG");
+                    var sClient = new SmtpClient("fakeClient.ORG");
                     sClient.Port = 25;
                     sClient.UseDefaultCredentials = false;
 

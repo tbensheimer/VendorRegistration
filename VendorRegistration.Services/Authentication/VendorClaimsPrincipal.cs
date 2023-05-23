@@ -20,5 +20,10 @@ namespace VendorRegistration.Services.Authentication
         {
             claimsPrincipal = principal;
         }
+
+        public void LogoutClaimsPrincipal()
+        {
+            claimsPrincipal = null;
+        }
     }
 }

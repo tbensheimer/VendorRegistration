@@ -11,5 +11,6 @@ namespace VendorRegistration.Services.Authentication
     {
         ClaimsPrincipal GetCurrentClaimsPrincipal();
         void StoreClaimsPrincipal(ClaimsPrincipal principal);
+        void LogoutClaimsPrincipal();
     }
 }
