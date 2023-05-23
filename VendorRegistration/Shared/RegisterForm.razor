@@ -1,8 +1,6 @@
 ﻿@page "/register"
 @using System.Security.Claims
 @inject NavigationManager NavigationManager
-@*@inject AuthenticationStateProvider AuthenticationStateProvider
-*@
 @inject CompanyService companyService
 @inject AccountService accountService
 @inject AddressService addressService
@@ -15,7 +13,7 @@
 @inject TypeCatCompanyChangesService changeService
 @inject EmailSenderService emailService
 @inject RegisterService registerService
-
+@inject IVendorClaimsPrincipal vendorClaimsPrinc
 
 <h2 class="title text-center mb-2">Vendor Registration Form</h2>
 
@@ -246,123 +244,120 @@
 
         @if (tab6)
         {
-                    @*<AuthorizeView Policy="AdminOrSuperUser">
-                        <Authorized>*@
-                   @*         <div class="tab-content">
-                                <div class="reg-complete-group mt-3 mb-4 shadow">
-                                    <div class="text-center d-flex flex-column align-items-center">
-                                        <h1 class="mt-0"><i alt="check mark icon" class="fa-solid fa-check"></i></h1>
+            @if (role == "Admin")
+            {
+                <div class="tab-content">
+                    <div class="reg-complete-group mt-3 mb-4 shadow">
+                        <div class="text-center d-flex flex-column align-items-center">
+                            <h1 class="mt-0"><i alt="check mark icon" class="fa-solid fa-check"></i></h1>
 
-                                        <h2 class="mt-0">Registration Complete!</h2>
+                            <h2 class="mt-0">Registration Complete!</h2>
 
-                                        <label style="font-size: 1.25rem;" class="d-flex align-items-center align-self-center mb-4 mt-2" for="legal">
-                                    @if (ComplianceAgreement)
-                                    {
-                                                    <input checked style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+                            <label style="font-size: 1.25rem;" class="d-flex align-items-center align-self-center mb-4 mt-2" for="legal">
+                                @if (ComplianceAgreement)
+                                {
+                                    <input checked style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
 
-                                    }
-                                    else
-                                    {
-                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
-                                    }
+                                }
+                                else
+                                {
+                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+                                }
 
-                                            Are you sure you want to activate this account?<span style="color: red;"> *</span>
-                                        </label>
-                                        <br />
-                                        <a @onclick="() => HandleRegisterSubmit()" class="fw-bold btn btn-success mb-2">Submit and Create Account</a>
-                                        <button type="button" @onclick="() => HandlePreviousView(6)" class="align-self-start btn btn-primary mb-3 mr-2">Previous</button>
+                                Are you sure you want to activate this account?<span style="color: red;"> *</span>
+                            </label>
+                            <br />
+                            <a @onclick="() => HandleRegisterSubmit()" class="fw-bold btn btn-success mb-2">Submit and Create Account</a>
+                            <button type="button" @onclick="() => HandlePreviousView(6)" class="align-self-start btn btn-primary mb-3 mr-2">Previous</button>
 
-                                    </div>
-                            @if (ErrorMessage is not null)
-                            {
-                                            <div class="alert alert-danger mt-3 text-center">@ErrorMessage</div>
-                            }
-                                </div>
-                            </div>*@
-                    @*    </Authorized>
-                    </AuthorizeView>*@
+                        </div>
+                        @if (ErrorMessage is not null)
+                        {
+                            <div class="alert alert-danger mt-3 text-center">@ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+            }
+            else if (role == "User")
+            {
+                <div class="tab-content">
+                    <div class="reg-complete-group mt-3 mb-4 shadow">
+                        <div class="text-center d-flex flex-column align-items-center">
+                            <h1 class="mt-0"><i alt="check mark icon" class="fa-solid fa-check"></i></h1>
 
-                  @*  <AuthorizeView Policy="HHCUser">
-                        <Authorized>*@
-                      @*      <div class="tab-content">
-                                <div class="reg-complete-group mt-3 mb-4 shadow">
-                                    <div class="text-center d-flex flex-column align-items-center">
-                                        <h1 class="mt-0"><i alt="check mark icon" class="fa-solid fa-check"></i></h1>
+                            <h2 class="mt-0">Registration Complete!</h2>
 
-                                        <h2 class="mt-0">Registration Complete!</h2>
+                            <label style="font-size: 1.25rem;" class="d-flex align-items-center align-self-center mb-4 mt-2" for="legal">
+                                @if (ComplianceAgreement)
+                                {
+                                    <input checked style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+                                }
+                                else
+                                {
+                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+                                }
 
-                                        <label style="font-size: 1.25rem;" class="d-flex align-items-center align-self-center mb-4 mt-2" for="legal">
-                                    @if (ComplianceAgreement)
-                                    {
-                                                    <input checked style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
-                                    }
-                                    else
-                                    {
-                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
-                                    }
+                                Are you sure you want to activate this account?<span style="color: red;"> *</span>
+                            </label>
+                            <br />
+                            <a @onclick="() => HandleRegisterSubmit()" class="fw-bold btn btn-success mb-2">Submit and Create Account</a>
+                            <button type="button" @onclick="() => HandlePreviousView(6)" class="align-self-start btn btn-primary mb-3 mr-2">Previous</button>
 
-                                            Are you sure you want to activate this account?<span style="color: red;"> *</span>
-                                        </label>
-                                        <br />
-                                        <a @onclick="() => HandleRegisterSubmit()" class="fw-bold btn btn-success mb-2">Submit and Create Account</a>
-                                        <button type="button" @onclick="() => HandlePreviousView(6)" class="align-self-start btn btn-primary mb-3 mr-2">Previous</button>
+                        </div>
+                        @if (ErrorMessage is not null)
+                        {
+                            <div class="alert alert-danger mt-3 text-center">@ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="tab-content">
+                    <div class="reg-complete-group mt-3 mb-4 shadow">
+                        <div class="text-center d-flex flex-column align-items-center">
 
-                                    </div>
-                            @if (ErrorMessage is not null)
-                            {
-                                            <div class="alert alert-danger mt-3 text-center">@ErrorMessage</div>
-                            }
-                                </div>
-                            </div>*@
-                      @*  </Authorized>
-                    </AuthorizeView>*@
+                            <h2 class="mt-0 mb-2">Vendor Compliance</h2>
 
-                  @*  <AuthorizeView>
-                        <NotAuthorized>*@
-                            <div class="tab-content">
-                                <div class="reg-complete-group mt-3 mb-4 shadow">
-                                    <div class="text-center d-flex flex-column align-items-center">
+                            <h4 class="w-75 mb-2 mx-auto">
+                                Please read the Vendor Compliance Statement below and follow the instructions.
+                                After submitting, a link will be sent to your email to verify your acount.
+                            </h4>
+                            <p style="width: 80%;">
+                                Completion of this Form does not guarantee doing business with HHC.
+                                Participation in Sourcing Events and activities posted at <a target="blank" href="http://purchasing.hhcorp.org/">http://purchasing.hhcorp.org/</a>
+                                (Request for Quotes, Request for Proposals, Bids & Bids for Public Works Projects) will provide an opportunity for Vendor Selection.
+                            </p>
 
-                                        <h2 class="mt-0 mb-2">Vendor Compliance</h2>
+                            <a class="btn btn-sm btn-primary mb-4" target="blank" href="https://www.hhcorp.org/Purch_TermsConditions.html" @onclick="() => ViewTerms()">View Terms and Conditions</a>
 
-                                        <h4 class="w-75 mb-2 mx-auto">Please read the Vendor Compliance Statement below and follow the instructions. 
-                                            After submitting, a link will be sent to your email to verify your acount.</h4>
-                                        <p style="width: 80%;">
-                                            Completion of this Form does not guarantee doing business with HHC.
-                                            Participation in Sourcing Events and activities posted at <a target="blank" href="http://purchasing.hhcorp.org/">http://purchasing.hhcorp.org/</a> 
-                                            (Request for Quotes, Request for Proposals, Bids & Bids for Public Works Projects) will provide an opportunity for Vendor Selection.
-                                        </p>
+                            <label class="d-flex align-items-center align-self-center mb-2" for="legal">
+                                @if (!viewTerms)
+                                {
+                                    <input disabled style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+                                }
+                                else if (viewTerms && !ComplianceAgreement)
+                                {
+                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+                                }
+                                else if (ComplianceAgreement && viewTerms)
+                                {
+                                    <input checked style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
+                                }
+                                I have read and agree to the terms and conditions of the Vendors Compliance Statement and will verify my account through email <span style="color: red;"> *</span>
+                            </label>
+                            <br />
+                            <button disabled="@disabled" type="button" @onclick="() => HandleRegisterSubmit()" class="fw-bold btn btn-success">Submit and Verify Account</button>
+                            <button type="button" @onclick="() => HandlePreviousView(6)" class="btn btn-primary mt-2 mb-3 mr-2 align-self-start">Previous</button>
 
-                                        <a class="btn btn-sm btn-primary mb-4" target="blank" href="https://www.hhcorp.org/Purch_TermsConditions.html" @onclick="() => ViewTerms()">View Terms and Conditions</a>
-
-                                        <label class="d-flex align-items-center align-self-center mb-2" for="legal">
-                                    @if (!viewTerms)
-                                    {
-                                                    <input disabled style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
-                                    }
-                                    else if (viewTerms && !ComplianceAgreement)
-                                    {
-                                                    <input style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
-                                    }
-                                    else if (ComplianceAgreement && viewTerms)
-                                    {
-                                                    <input checked style="padding-top: 22px; width: 20px; height: 16px; position: relative !important; margin-left: 0 !important" @onclick="() => HandleComplianceAgreement()" type="checkbox" class="form-check-input" id="legal" />
-                                    }
-                                            I have read and agree to the terms and conditions of the Vendors Compliance Statement and will verify my account through email <span style="color: red;"> *</span>
-                                        </label>
-                                        <br />
-                                        <button disabled="@disabled" type="button" @onclick="() => HandleRegisterSubmit()" class="fw-bold btn btn-success">Submit and Verify Account</button>
-                                        <button type="button" @onclick="() => HandlePreviousView(6)" class="btn btn-primary mt-2 mb-3 mr-2 align-self-start">Previous</button>
-
-                                    </div>
-                            @if (ErrorMessage is not null)
-                            {
-                                            <div class="alert alert-danger mt-3 text-center">@ErrorMessage</div>
-                            }
-                                </div>
-                            </div>
-                      @*  </NotAuthorized>
-                    </AuthorizeView>*@
+                        </div>
+                        @if (ErrorMessage is not null)
+                        {
+                            <div class="alert alert-danger mt-3 text-center">@ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+            }
         }
         </div>
 }
@@ -408,20 +403,17 @@
     private string? role { get; set; }
     private bool disabled = false;
     private bool viewTerms = false;
+    private ClaimsPrincipal? userAuth { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        //var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
+        userAuth = vendorClaimsPrinc.GetCurrentClaimsPrincipal();
+        List<Claim> claims = new();
 
-        var userAuth = ClaimsPrincipal.Current;
-
-        if (userAuth is not null)
+        if (userAuth != null)
         {
             claims = userAuth.Claims.ToList();
-        }
 
-        if (claims is not null)
-        {
             role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
         }
 

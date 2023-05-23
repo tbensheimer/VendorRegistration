@@ -1,7 +1,7 @@
 ﻿@using System.Security.Claims
 @inject ThemeService _theme
 @inject NavigationManager _navManager
-
+@inject IVendorClaimsPrincipal vendorClaimsPrinc
 
 <!-- ========== Left Sidebar Start ========== -->
 <div class="left-side-menu">
@@ -22,10 +22,10 @@
 
     <div class="h-100" id="left-side-menu-container">
         <!--- Sidemenu -->
-        <ul class="metismenu side-nav"
+        <ul class="metismenu side-nav">
 
-
-
+        @if(role == "User")
+        {
                  <li class="side-nav-item">
             <NavLink class="side-nav-link" href="" Match="NavLinkMatch.All">
                 <i class="fa-solid fa-house"></i>
@@ -52,18 +52,17 @@
                         <span> Types/Categories </span>
                     </NavLink>
                 </li>
-              @*  </Authorized>
-                </AuthorizeView>*@
-
-            @*    <AuthorizeView Policy="AdminOrSuperUser">
-                    <Authorized>*@
-                         <li class="side-nav-item">
-                     <NavLink class="side-nav-link" href="" Match="NavLinkMatch.All">
-                         <i class="fa-solid fa-house"></i>
+                }
+              
+            @if (role == "Admin")
+            {
+                <li class="side-nav-item">
+                    <NavLink class="side-nav-link" href="" Match="NavLinkMatch.All">
+                        <i class="fa-solid fa-house"></i>
                         <span> Home </span>
-                     </NavLink>
-                 </li>
-                    <li class="side-nav-item">
+                    </NavLink>
+                </li>
+                <li class="side-nav-item">
                     <NavLink class="side-nav-link" href="/notifications">
                         <i class="fa-solid fa-envelope"></i>
                         <span> Notifications </span>
@@ -104,19 +103,10 @@
                         <span>Reporting</span>
                     </NavLink>
                 </li>
-@*
-                </Authorized>
-                </AuthorizeView>*@
-
-   @*             <AuthorizeView Policy="HHCUser">
-                    <Authorized>
-                         <li class="side-nav-item">
-                     <NavLink class="side-nav-link" href="" Match="NavLinkMatch.All">
-                         <i class="fa-solid fa-house"></i>
-                        <span> Home </span>
-                     </NavLink>
-                 </li>
-
+            }
+            
+            @if (role != "User" && role != "Admin")
+            {
                 <li class="side-nav-item">
                     <NavLink class="side-nav-link" href="/register">
                         <i class="uil uil-user-circle"></i>
@@ -125,33 +115,12 @@
                 </li>
 
                 <li class="side-nav-item">
-                    <NavLink class="side-nav-link" href="/reports">
-                        <i class="fa-solid fa-play"></i>
-                        <span>Reporting</span>
-                    </NavLink>
-                </li>
-
-                </Authorized>
-                </AuthorizeView>*@
-
-           @* <AuthorizeView>
-                <NotAuthorized>*@
-                <li class="side-nav-item">
-                    <NavLink class="side-nav-link" href="/register">
-                        <i class="uil uil-user-circle"></i>
-                        <span> Register </span>
-                    </NavLink>
-                </li>
-
-                 <li class="side-nav-item">
                     <NavLink class="side-nav-link" href="/account/login">
-                    <i class="fa-solid fa-right-to-bracket"></i>
-                    <span> Log In </span>
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span> Log In </span>
                     </NavLink>
                 </li>
-           @* </NotAuthorized>
-            </AuthorizeView>*@
-
+            }
             </ul>
 
         <div class="fixed-bottom position-absolute mb-1" style="z-index: -1">
@@ -181,8 +150,9 @@
     private string? CompanyId { get; set; }
     private bool collapseNavMenu = true;
     private Version version = Assembly.GetEntryAssembly().GetName().Version;
-
     private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private ClaimsPrincipal? userAuth { get; set; }
+    private string role { get; set; }
 
     private void ToggleNavMenu()
     {
@@ -192,15 +162,15 @@
     protected override async Task OnInitializedAsync()
     {
         //var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
-
-        var userAuth = ClaimsPrincipal.Current;
+        userAuth = vendorClaimsPrinc.GetCurrentClaimsPrincipal();
+        List<Claim> claims = new();
 
         if (userAuth != null)
         {
-            var claims = userAuth.Claims.ToList();  //
+            claims = userAuth.Claims.ToList();
 
+            role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
             CompanyId = claims?.FirstOrDefault(claim => claim.Type.Equals("Company"))?.Value;
         }
-
     }
 }

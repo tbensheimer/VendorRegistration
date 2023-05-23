@@ -1,8 +1,10 @@
-﻿@inject AuthenticationStateProvider AuthenticationStateProvider
+﻿@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject CompanyService companyService
 @inject AccountService accountService
 @inject EncryptionService encryptionService
 @inject EmailValidationService emailValidator
+@inject IVendorClaimsPrincipal vendorClaimsPrinc
 
 <EditForm Model="@Account" OnValidSubmit="() => HandleAccountComplete()">
     <DataAnnotationsValidator />
@@ -154,12 +156,19 @@
 
     private string? accountEmail { get; set; }
 
+    private ClaimsPrincipal? userAuth { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
-        var userAuth = await ((CustomAuthenticationStateProvider)AuthenticationStateProvider).GetAuthenticationStateAsync();
+        userAuth = vendorClaimsPrinc.GetCurrentClaimsPrincipal();
+        List<Claim> claims = new();
 
-        var claims = userAuth.User.Claims.ToList();
-        role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+        if (userAuth != null)
+        {
+            claims = userAuth.Claims.ToList();
+
+            role = claims?.FirstOrDefault(claim => claim.Type.Equals("Role"))?.Value;
+        }
 
         if (Account is not null)
         {
