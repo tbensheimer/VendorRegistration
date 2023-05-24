@@ -248,41 +248,40 @@
                 loading = true;
                 showDuo = true;
                 StateHasChanged();
-                //HHC Duo Login Authentication
-                //((CustomAuthenticationStateProvider)AuthenticationStateProvider).ValidateLogin(login.Username, login.Password, login.Passcode);
 
-                //need to authenticate if user is admin (database or just one admin with email)
+                if (login.Username == "adminExample@gmail.com")
+                {
+                    User user = new User();
+                    user.UserName = login.Username;
+                    user.Password = login.Password;
+                    user.Domain = "";
+                    user.Role = "admin";
 
-                                User user = new User();
-                                user.UserName = login.Username;
-                                user.Password = login.Password;
-                                user.Domain = "";
-                                user.Role = "admin";
-
-                                List<Claim> claims = new List<Claim>();
-                                claims.Add(new Claim(ClaimTypes.Name, user.UserName));
+                    List<Claim> claims = new List<Claim>();
+                    claims.Add(new Claim(ClaimTypes.Name, user.UserName));
 
 
-                                if (user.Role.Contains("admin"))
-                                {
-                                    claims.Add(new Claim("Role", "Admin"));
-                                }
-                                if (user.Role.Contains("user"))
-                                {
-                                    claims.Add(new Claim("Role", "User"));
-                                }
-                                if (user.Role.Contains("hhcUser"))
-                                {
-                                    claims.Add(new Claim("Role", "HHCUser"));
-                                }
+                    if (user.Role.Contains("admin"))
+                    {
+                        claims.Add(new Claim("Role", "Admin"));
+                    }
+                    if (user.Role.Contains("user"))
+                    {
+                        claims.Add(new Claim("Role", "User"));
+                    }
+                    if (user.Role.Contains("hhcUser"))
+                    {
+                        claims.Add(new Claim("Role", "HHCUser"));
+                    }
 
-                                claims.Add(new Claim("Company", $"{user.CompanyId}"));
+                    claims.Add(new Claim("Company", $"{user.CompanyId}"));
 
-                                claims.Add(new Claim("Domain", user.Domain));
+                    claims.Add(new Claim("Domain", user.Domain));
 
-                                ClaimsIdentity identity = new ClaimsIdentity(claims, "apiauth_type");
+                    ClaimsIdentity identity = new ClaimsIdentity(claims, "apiauth_type");
 
-                                vendorClaimsPrinc.StoreClaimsPrincipal(new ClaimsPrincipal(identity));
+                    vendorClaimsPrinc.StoreClaimsPrincipal(new ClaimsPrincipal(identity));
+                }
 
                 NavigationManager.NavigateTo("/");
             }
@@ -450,10 +449,14 @@
         if (args.ToString() == "HHC")
         {
             HHCLogin = true;
+            login.Username = "adminExample@gmail.com";
+            login.Password = "admin123";
         }
         else
         {
             HHCLogin = false;
+            login.Username = "";
+            login.Password = "";
         }
     }
 
